@@ -59,6 +59,18 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 .sheet h3{margin-bottom:12px}
 @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:20px}}
 .dayhead{font-size:13px;color:var(--sub);margin:14px 0 6px;font-weight:600}
+.timetable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.timetable{display:grid;grid-template-columns:46px repeat(7,minmax(64px,1fr));gap:3px;min-width:580px}
+.tt-h{font-size:11px;text-align:center;padding:5px 0;border-radius:8px;background:#e3f3ff;color:#4aa8e8;font-weight:600}
+.tt-h.today{background:linear-gradient(135deg,#7ec8f2,#5db6ee);color:#fff}
+.tt-t{font-size:10px;color:var(--sub);text-align:center;padding:6px 2px;border-radius:8px;background:#f2fafe;word-break:break-all}
+.tt-c{border-radius:10px;padding:6px 4px;font-size:10px;line-height:1.4;min-height:64px;color:#fff;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.tt-c b{font-size:11px;margin-bottom:2px}
+.tt-c span{opacity:.9;font-size:9.5px}
+.tt-c.empty{background:rgba(240,249,255,.6);min-height:64px}
+.tt-legend{font-size:11px;color:var(--sub);margin:8px 0 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tt-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
+.tt-past{opacity:.45}
 </style>
 </head>
 <body>
@@ -95,7 +107,6 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
   <!-- 课表 -->
   <div class="page" id="page-schedule">
     <div class="card"><h3>📚 我的课表 <span class="op" onclick="openCourseAdd()">＋ 添加课程</span></h3>
-      <div class="hint">从超级课程表对照录入即可，录一次长期使用，随时可改</div>
       <div id="courseList"></div>
     </div>
   </div>
@@ -252,7 +263,27 @@ function renderAll(){
  // 课表
  const cl=document.getElementById('courseList');const dn=['周日','周一','周二','周三','周四','周五','周六'];
  const cw=curWeek();
- cl.innerHTML='<div class="hint">当前第 '+cw+' 周 · 灰色=本周没课</div>'+(courses.length?courses.map((c,i)=>{const on=weekOn(cw,c.weeks);return `<div class="item ${on?'':'done'}"><div class="t"><div class="title">${esc(c.name)}${on?'':' <span class="tag" style="background:#eee;color:#999">非本周</span>'}</div><div class="meta">${dn[c.day]} ${c.start}–${c.end}${c.room?' · '+esc(c.room):''}${c.weeks?' · '+c.weeks+'周':''}</div></div><button class="act" onclick="delCourse(${i})">删除</button></div>`}).join(''):'<div class="empty">还没有课程，点右上角添加</div>');
+ const colors=['#7ec8f2','#f7a8c0','#9fd8a8','#c3aef7','#f5b942','#7fd6d0','#f2977f','#a8c8f7','#e8a2d0','#8fd0b0','#f2c97e','#b3b9f2'];
+ const cn={};let ci=0;
+ const weekDates=[];{const mon=new Date(SEM_START);mon.setDate(mon.getDate()+(cw-1)*7);for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(d.getDate()+i);weekDates.push((d.getMonth()+1)+'/'+d.getDate())}}
+ const active=courses.map((c,i)=>({...c,i,on:weekOn(cw,c.weeks)}));
+ const slots=[];
+ active.forEach(c=>{if(!active.some(x=>x!==c&&+x.day===+c.day&&x.start<c.end&&c.start<x.end)){const s=slots.find(s=>s.start===c.start&&s.end===c.end);if(!s)slots.push({start:c.start,end:c.end})}});
+ active.forEach(c=>{const s=slots.find(s=>s.start===c.start&&s.end===c.end);if(!s)slots.push({start:c.start,end:c.end})});
+ slots.sort((a,b)=>a.start.localeCompare(b.start));
+ let g='<div class="tt-h" style="background:#f2fafe;color:var(--sub)">周次</div>';
+ for(let d0=1;d0<=7;d0++){const idx=(d0)%7;g+=`<div class="tt-h${idx===new Date().getDay()?' today':''}">${dn[idx]}<br>${weekDates[idx===0?6:idx-1]||''}</div>`}
+ slots.forEach(s=>{
+  const lab=s.start.startsWith('08')?'上午':s.start.startsWith('13')?'下午':'晚上';
+  g+=`<div class="tt-t">${lab}<br>${s.start}<br>${s.end}</div>`;
+  for(let d0=1;d0<=7;d0++){const idx=d0%7;
+   const cell=active.filter(c=>+c.day===idx&&c.start===s.start&&c.end===s.end);
+   if(!cell.length){g+='<div class="tt-c empty"></div>';return}
+   const c=cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
+   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})" title="点按删除"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
+  }
+ });
+ cl.innerHTML='<div class="tt-legend"><span>第 '+cw+' 周 · '+SEM_START.slice(5).replace('-','/')+' 开学</span><span><i style="background:#7ec8f2"></i>本周有课</span><span><i style="background:#dceefb"></i>非本周（点击格子可删除）</span></div><div class="timetable-wrap"><div class="timetable">'+g+'</div></div><div class="hint">💡 手机上左右滑动查看周六周日 · 添加课程时填周次（如 9-16）即可自动跨周切换</div>';
  // 课程下拉
  const sel=document.getElementById('fCourse');const cur=sel.value;sel.innerHTML='<option value="">不限课程</option>'+courses.map(c=>`<option>${esc(c.name)}</option>`).join('');sel.value=cur;
 }
