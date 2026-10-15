@@ -62,6 +62,11 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 .weekgrid .d b{display:block;font-size:16px}
 .fab{position:fixed;right:18px;bottom:76px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8fd0f5,#5db6ee);color:#fff;font-size:26px;border:none;box-shadow:0 4px 16px rgba(126,200,242,.5);cursor:pointer;z-index:60;transition:.2s}
 .fab:hover{transform:scale(1.08) rotate(8deg)}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--sub);background:#fff;color:transparent;font-size:15px;line-height:22px;cursor:pointer;flex-shrink:0;transition:.2s;padding:0}
+.chk:hover{border-color:var(--green)}
+.chk.on{background:var(--green);border-color:var(--green);color:#fff}
+body.dark .chk{background:#223244;color:transparent}
+body.dark .chk.on{background:var(--green);color:#fff}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:100;align-items:flex-end;justify-content:center}
 .modal.on{display:flex}
 .sheet{background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}
@@ -342,7 +347,7 @@ function renderAll(){
  // 课程下拉
  const sel=document.getElementById('fCourse');const cur=sel.value;sel.innerHTML='<option value="">不限课程</option>'+courses.map(c=>`<option>${esc(c.name)}</option>`).join('');sel.value=cur;
 }
-function todoHTML(i){return `<div class="item ${i.done?'done':''}"><div class="dot ${prio(i)}"></div><div class="t"><div class="title" onclick="toggleDone(${i.id})" style="cursor:pointer">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${i.date} ${i.time||''} · ${dlText(i)}</div></div><button class="act" onclick="delItem(${i.id})">✕</button></div>`}
+function todoHTML(i){return `<div class="item ${i.done?'done':''}"><div class="dot ${prio(i)}"></div><div class="t"><div class="title" onclick="toggleDone(${i.id})" style="cursor:pointer">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${i.date} ${i.time||''} · ${dlText(i)}</div></div><button class="chk ${i.done?'on':''}" onclick="toggleDone(${i.id})" title="标为完成">✔</button><button class="act" onclick="delItem(${i.id})">✕</button></div>`}
 function itemHTML(o){return `<div class="item"><div class="dot ${o.cls}"></div><div class="t"><div class="title">${esc(o.title)}</div><div class="meta">${o.tags.map(typeTag).join('')}${esc(o.meta)}</div></div></div>`}
 function toggleRaw(id){document.getElementById('raw'+id).classList.toggle('open')}
 function decide(id,join){const i=inbox.find(x=>x.id===id);if(join){items.push({id:Date.now(),title:i.title,date:i.date||new Date().toISOString().slice(0,10),time:'23:59',type:i.type,done:false});i.status='已参加'}else i.status='不参加';save()}
