@@ -149,7 +149,8 @@ load();
 
 // ===== 云同步（Supabase）=====
 let sb=null,cloudReady=false;
-function initSB(){const url=localStorage.sbUrl,key=localStorage.sbKey;if(!url||!key||!window.supabase)return false;
+const SB_DEFAULT={url:'https://dpxacpjkxedonkhjmzfz.supabase.co',key:'sb_publishable_lBFwdj92DZTO0Wc7NzCELQ_UY_JNvky'};
+function initSB(){const url=localStorage.sbUrl||SB_DEFAULT.url,key=localStorage.sbKey||SB_DEFAULT.key;if(!url||!key||!window.supabase)return false;
  try{sb=supabase.createClient(url,key);cloudReady=true;return true}catch(e){return false}}
 function saveLC(){localStorage.sbUrl=document.getElementById('sbUrl').value.trim().replace(/\/+$/,'');localStorage.sbKey=document.getElementById('sbKey').value.trim();
  if(initSB()){document.getElementById('lcStatus').textContent='✅ 已连接，正在同步…';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查 URL 和 key'}}
