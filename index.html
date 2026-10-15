@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>我的工作台</title>
+<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#222;--sub:#888;--red:#e5484d;--yellow:#f5a623;--green:#2f9e44;--blue:#3b82f6;--line:#e8e8ec;--radius:14px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:80px}
+header{background:linear-gradient(135deg,#4f7cff,#7c5cff);color:#fff;padding:22px 18px 16px;border-radius:0 0 22px 22px}
+header h1{font-size:20px;font-weight:700}
+header .date{opacity:.85;font-size:13px;margin-top:2px}
+header .alerts{margin-top:10px;font-size:13px;background:rgba(255,255,255,.18);border-radius:10px;padding:8px 12px;display:none}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:none;padding:9px 0 7px;font-size:11px;color:var(--sub);cursor:pointer}
+nav button .ic{font-size:20px;display:block}
+nav button.on{color:var(--blue);font-weight:600}
+main{padding:14px;max-width:640px;margin:0 auto}
+.page{display:none}
+.page.on{display:block}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card h3{font-size:15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card h3 .op{font-size:12px;color:var(--blue);cursor:pointer;font-weight:400}
+.item{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:flex-start}
+.item:first-of-type{border-top:none}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.dot.red{background:var(--red)}.dot.yellow{background:var(--yellow)}.dot.green{background:var(--green)}.dot.blue{background:var(--blue)}
+.item .t{flex:1;min-width:0}
+.item .title{font-size:14px;word-break:break-all}
+.item .meta{font-size:12px;color:var(--sub);margin-top:3px}
+.item .meta b{color:var(--red)}
+.tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:8px;background:#eef2ff;color:#4f6ef7;margin-right:4px}
+.done .title{text-decoration:line-through;color:var(--sub)}
+button.act{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer}
+button.act.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+textarea,input[type=text],input[type=date],input[type=time],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical}
+.frow{display:flex;gap:8px;margin-top:8px}
+.frow>*{flex:1}
+.hint{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
+.empty{text-align:center;color:var(--sub);font-size:13px;padding:24px 0}
+.parsed{background:#f0f7ff;border:1px solid #d6e6ff;border-radius:10px;padding:10px;margin-top:8px;font-size:13px;line-height:1.7}
+.raw{max-height:0;overflow:hidden;transition:.25s;font-size:12px;color:var(--sub);white-space:pre-wrap;word-break:break-all}
+.raw.open{max-height:400px;margin-top:8px}
+.weekgrid{display:flex;gap:6px;margin-bottom:10px}
+.weekgrid .d{flex:1;text-align:center;padding:8px 0;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:12px}
+.weekgrid .d.today{background:#4f7cff;color:#fff;border-color:#4f7cff}
+.weekgrid .d b{display:block;font-size:16px}
+.fab{position:fixed;right:18px;bottom:76px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(59,130,246,.4);cursor:pointer;z-index:60}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:100;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}
+.sheet h3{margin-bottom:12px}
+@media(min-width:700px){.modal{align-items:center}.sheet{border-radius:20px}}
+.dayhead{font-size:13px;color:var(--sub);margin:14px 0 6px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>我的工作台 🎓</h1>
+  <div class="date" id="todayStr"></div>
+  <div class="alerts" id="alertBar"></div>
+</header>
+<main>
+  <!-- 时间轴 -->
+  <div class="page on" id="page-timeline">
+    <div class="weekgrid" id="weekGrid"></div>
+    <div id="timelineBody"></div>
+  </div>
+  <!-- 待办 -->
+  <div class="page" id="page-todo">
+    <div class="card"><h3>待办事项 <span class="op" onclick="openAdd()">＋ 手动添加</span></h3><div id="todoList"></div></div>
+  </div>
+  <!-- 收件箱 -->
+  <div class="page" id="page-inbox">
+    <div class="card">
+      <h3>📥 智能收件箱</h3>
+      <textarea id="pasteBox" rows="4" placeholder="把老师发的消息文字粘贴到这里（微信截图先用 iPhone 自带"实况文本"识别文字），松手后自动提取核心要求"></textarea>
+      <div class="frow"><button class="act pri" onclick="parsePaste()">✨ 提取核心内容</button></div>
+      <div class="hint">支持识别：截止日期（X月X日 / 周X）、"提交/交/上传/报告/PPT"等作业要求、"工时/学分/志愿/团支书"等事务（自动归入事务筛选）</div>
+      <div id="parseResult"></div>
+    </div>
+    <div class="card"><h3>收件记录</h3><div id="inboxList"></div></div>
+  </div>
+  <!-- 事务筛选 -->
+  <div class="page" id="page-triage">
+    <div class="card"><h3>🎯 待你决定的事务</h3><div class="hint">这些事项涉及工时/学分/志愿/班级事务，点击"参加"会加入你的时间轴</div><div id="triageList"></div></div>
+  </div>
+  <!-- 课表 -->
+  <div class="page" id="page-schedule">
+    <div class="card"><h3>📚 我的课表 <span class="op" onclick="openCourseAdd()">＋ 添加课程</span></h3>
+      <div class="hint">从超级课程表对照录入即可，录一次长期使用，随时可改</div>
+      <div id="courseList"></div>
+    </div>
+  </div>
+  <!-- 设置 -->
+  <div class="page" id="page-set">
+    <div class="card"><h3>☁️ 云同步（多设备共享数据）</h3>
+      <div class="hint">1. 打开 <b>leancloud.cn</b> 免费注册 → 创建"开发版"应用<br>2. 在 设置→应用凭证 里复制 AppID 和 AppKey，粘贴到下面（三台设备填同一组即可实时同步）</div>
+      <input type="text" id="lcAppId" placeholder="AppID" style="margin-top:8px">
+      <input type="text" id="lcAppKey" placeholder="AppKey" style="margin-top:8px">
+      <div class="frow"><button class="act pri" onclick="saveLC()">保存并连接</button><button class="act" onclick="pullCloud()">立即同步</button></div>
+      <div class="hint" id="lcStatus"></div>
+    </div>
+    <div class="card"><h3>🔔 iPhone 推送提醒</h3>
+      <div class="hint">点下方按钮会把"3天内截止的待办"复制成清单，粘贴进 iPhone 自带"提醒事项"App，即可获得真机闹钟式提醒（详细自动化设置见使用说明）</div>
+      <div class="frow"><button class="act pri" onclick="exportReminders()">复制临近截止清单</button></div>
+    </div>
+    <div class="card"><h3>🗑️ 数据</h3><div class="frow"><button class="act" onclick="exportData()">导出备份</button></div></div>
+  </div>
+</main>
+<button class="fab" onclick="openAdd()">＋</button>
+<div class="modal" id="modal"><div class="sheet">
+  <h3 id="mTitle">添加待办</h3>
+  <input type="text" id="fTitle" placeholder="事项名称，如：提交设计调研报告">
+  <div class="frow">
+    <input type="date" id="fDate"><input type="time" id="fTime" value="23:59">
+  </div>
+  <div class="frow">
+    <select id="fType"><option value="作业">作业</option><option value="课程">课程</option><option value="志愿活动">志愿活动</option><option value="班级事务">班级事务</option><option value="文件提交">文件提交</option><option value="其他">其他</option></select>
+    <select id="fCourse"><option value="">不限课程</option></select>
+  </div>
+  <div class="frow"><button class="act pri" onclick="saveItem()">保存</button><button class="act" onclick="closeModal()">取消</button></div>
+</div></div>
+<div class="modal" id="modalC"><div class="sheet">
+  <h3>添加课程</h3>
+  <input type="text" id="cName" placeholder="课程名，如：人机工程学">
+  <div class="frow"><select id="cDay"><option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="0">周日</option></select><input type="time" id="cStart" value="08:00"><input type="time" id="cEnd" value="09:40"></div>
+  <input type="text" id="cRoom" placeholder="地点（选填）" style="margin-top:8px">
+  <div class="frow"><button class="act pri" onclick="saveCourse()">保存</button><button class="act" onclick="closeModal()">取消</button></div>
+</div></div>
+<nav>
+  <button class="on" data-p="timeline" onclick="go('timeline')"><span class="ic">📅</span>时间轴</button>
+  <button data-p="todo" onclick="go('todo')"><span class="ic">✅</span>待办</button>
+  <button data-p="inbox" onclick="go('inbox')"><span class="ic">📥</span>收件箱</button>
+  <button data-p="triage" onclick="go('triage')"><span class="ic">🎯</span>事务</button>
+  <button data-p="schedule" onclick="go('schedule')"><span class="ic">📚</span>课表</button>
+  <button data-p="set" onclick="go('set')"><span class="ic">⚙️</span>设置</button>
+</nav>
+<script>
+// ===== 数据层 =====
+let items=[],courses=[],inbox=[];
+const load=()=>{try{items=JSON.parse(localStorage.items||'[]');courses=JSON.parse(localStorage.courses||'[]');inbox=JSON.parse(localStorage.inbox||'[]');}catch(e){}};
+const save=()=>{localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);if(window.AV&&AV.applicationId)pushCloud();renderAll();};
+load();
+
+// ===== 云同步 =====
+let cloudObj=null;
+function initLC(){const id=localStorage.lcId,k=localStorage.lcKey;if(!id||!k)return false;
+ try{AV.init({appId:id,appKey:k});return true}catch(e){return false}}
+function saveLC(){localStorage.lcId=document.getElementById('lcAppId').value.trim();localStorage.lcKey=document.getElementById('lcAppKey').value.trim();
+ if(initLC()){document.getElementById('lcStatus').textContent='✅ 已连接，数据将自动同步';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查 AppID/Key'}}
+async function pushCloud(){if(!window.AV||!AV.applicationId)return;
+ try{if(!cloudObj){const q=new AV.Query('WorkbenchData');q.equalTo('uid','main');cloudObj=await q.first()||new (AV.Object.extend('WorkbenchData'))();cloudObj.set('uid','main');}
+ cloudObj.set('data',JSON.stringify({items,courses,inbox}));await cloudObj.save();}catch(e){}}
+async function pullCloud(){if(!window.AV||!AV.applicationId){document.getElementById('lcStatus').textContent='未配置云同步';return}
+ try{const q=new AV.Query('WorkbenchData');q.equalTo('uid','main');const o=await q.first();
+ if(o&&o.get('data')){const d=JSON.parse(o.get('data'));items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];save();renderAll();}
+ document.getElementById('lcStatus').textContent='✅ 同步完成 '+new Date().toLocaleTimeString();}catch(e){document.getElementById('lcStatus').textContent='⚠️ 同步失败：'+e.message}}
+if(initLC())setTimeout(pullCloud,500);
+
+// ===== 智能解析 =====
+function parseText(text){
+ const r={date:null,time:'23:59',type:'作业',title:'',isTriage:false};
+ const now=new Date();
+ let m=text.match(/(\d{1,2})月(\d{1,2})[日号]/);if(m){r.date=`${now.getFullYear()}-${pad(m[1])}-${pad(m[2])}`}
+ if(!r.date){m=text.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);if(m)r.date=`${m[1]}-${pad(m[2])}-${pad(m[3])}`}
+ if(!r.date){const wk={'周一':1,'周二':2,'周三':3,'周四':4,'周五':5,'周六':6,'周日':0,'星期一':1,'星期二':2,'星期三':3,'星期四':4,'星期五':5,'星期六':6,'星期日':0};
+  for(const k in wk){if(text.includes(k)){const d=new Date(now);const diff=(wk[k]-d.getDay()+7)%7||7;d.setDate(d.getDate()+diff);r.date=d.toISOString().slice(0,10);break}}}
+ m=text.match(/(\d{1,2})[点:：时](\d{1,2})?分?/);if(m)r.time=`${pad(m[1])}:${pad(m[2]||'00')}`;
+ if(/志愿|工时/.test(text))r.type='志愿活动';
+ else if(/学分|综测|团支书|班委|班会|入党|团员/.test(text))r.type='班级事务';
+ else if(/学习通|提交作业|交作业/.test(text))r.type='作业';
+ else if(/邮箱|文件|材料|表格/.test(text))r.type='文件提交';
+ if(r.type==='志愿活动'||r.type==='班级事务')r.isTriage=true;
+ // 取标题：截取含关键词的前句
+ const lines=text.split(/[\n。；;！!]/).map(s=>s.trim()).filter(Boolean);
+ let best=lines.find(l=>/提交|交|上传|完成|报名|参加|截止/.test(l))||lines[0]||text.slice(0,30);
+ r.title=best.slice(0,60);
+ return r;
+}
+const pad=n=>String(n).padStart(2,'0');
+function parsePaste(){
+ const t=document.getElementById('pasteBox').value.trim();if(!t)return;
+ const r=parseText(t);
+ document.getElementById('parseResult').innerHTML=`<div class="parsed"><b>识别结果：</b><br>📌 ${esc(r.title)}<br>⏰ ${r.date||'（未识别日期，请手动选）'} ${r.time}<br>🏷️ ${r.type}${r.isTriage?'<br>🎯 已归入「事务筛选」，等你在事务页决定是否参加':''}
+ <div class="frow"><button class="act pri" onclick='confirmParse(${JSON.stringify(JSON.stringify(r))},${JSON.stringify(JSON.stringify(t))})'>确认保存</button></div></div>`;
+}
+function confirmParse(rJson,tJson){const r=JSON.parse(rJson);
+ if(!r.date){r.date=prompt('未识别到截止日期，请输入（格式 2026-10-20）：')||null;if(!r.date)return}
+ if(r.isTriage){inbox.push({id:Date.now(),text:tJson.slice(0,1)?JSON.parse(tJson):'',title:r.title,date:r.date,type:r.type,status:'待决定',raw:JSON.parse(tJson)})}
+ else items.push({id:Date.now(),title:r.title,date:r.date,time:r.time,type:r.type,done:false});
+ document.getElementById('pasteBox').value='';document.getElementById('parseResult').innerHTML='';save();}
+
+// ===== 渲染 =====
+function daysLeft(d,t){const dt=new Date(d+'T'+(t||'23:59'));return Math.ceil((dt-new Date())/864e5)}
+function prio(it){if(it.done)return'green';const n=daysLeft(it.date,it.time);return n<0?'green':n<=1?'red':n<=3?'yellow':'blue'}
+function dlText(it){const n=daysLeft(it.date,it.time);if(it.done)return'已完成';if(n<0)return'已过期';if(n===0)return'<b>今天截止</b>';return'剩 '+n+' 天'}
+function esc(s){return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))}
+const typeTag=t=>`<span class="tag">${t}</span>`;
+
+function renderAll(){
+ document.getElementById('todayStr').textContent=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});
+ // 提醒条
+ const urgent=items.filter(i=>!i.done&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=2);
+ const ab=document.getElementById('alertBar');
+ ab.style.display=urgent.length?'block':'none';
+ ab.innerHTML=urgent.length?'🔔 '+urgent.length+' 项临近截止：'+esc(urgent[0].title)+(urgent.length>1?' 等':''):'';
+ // 周历
+ const wg=document.getElementById('weekGrid');const now=new Date();let h='';
+ for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()+i);
+  h+=`<div class="d${i===0?' today':''}">${i===0?'今天':['日','一','二','三','四','五','六'][d.getDay()]}<b>${d.getDate()}</b></div>`}
+ wg.innerHTML=h;
+ // 时间轴（按天合并：课程+待办）
+ const body=document.getElementById('timelineBody');const byDay={};
+ items.forEach(i=>{if(i.done)return;(byDay[i.date]=byDay[i.date]||[]).push(i)});
+ const dates=Object.keys(byDay).sort();
+ if(!dates.length&&!courses.length){body.innerHTML='<div class="empty">暂无安排，点击右下角 ＋ 添加</div>'}
+ else{let hh='';
+  dates.slice(0,14).forEach(d=>{const n=daysLeft(d);
+   const lab=n===0?'今天':n===1?'明天':new Date(d+'T12:00').toLocaleDateString('zh-CN',{month:'numeric',day:'numeric',weekday:'short'});
+   hh+=`<div class="dayhead">${lab}${n<=3&&n>=0?' ⏰':''}</div>`;
+   const wd=new Date(d+'T12:00').getDay();
+   courses.filter(c=>+c.day===wd).forEach(c=>{hh+=itemHTML({title:c.name+'（上课）',meta:c.start+'–'+c.end+(c.room?' '+c.room:''),cls:'blue',tags:['课程']})});
+   byDay[d].sort((a,b)=>(a.time||'').localeCompare(b.time||'')).forEach(i=>{hh+=todoHTML(i)});
+  });
+  body.innerHTML=hh;}
+ // 待办列表
+ const tl=document.getElementById('todoList');const sorted=[...items].sort((a,b)=>(a.done?9:0)-(b.done?9:0)||a.date.localeCompare(b.date));
+ tl.innerHTML=sorted.length?sorted.map(todoHTML).join(''):'<div class="empty">还没有待办</div>';
+ // 收件箱
+ const il=document.getElementById('inboxList');
+ il.innerHTML=inbox.length?inbox.map(i=>`<div class="item"><div class="t"><div class="title">${esc(i.title)}</div>
+  <div class="meta">${typeTag(i.type)}${i.date?' '+i.date:''} · ${i.status||''}</div><span class="op" style="font-size:12px;color:var(--blue);cursor:pointer" onclick="toggleRaw(${i.id})">查看原文</span>
+  <div class="raw" id="raw${i.id}">${esc(i.raw)}</div></div>
+  ${i.status==='待决定'?`<div><button class="act pri" onclick="decide(${i.id},1)">参加</button><button class="act" onclick="decide(${i.id},0)">不参加</button></div>`:''}</div>`).join(''):'<div class="empty">暂无消息记录</div>';
+ // 事务
+ const trl=document.getElementById('triageList');const pend=inbox.filter(i=>i.status==='待决定');
+ trl.innerHTML=pend.length?pend.map(i=>`<div class="item"><div class="t"><div class="title">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${i.date?' 建议 '+i.date:''}</div></div>
+  <div><button class="act pri" onclick="decide(${i.id},1)">参加</button><button class="act" onclick="decide(${i.id},0)">不参加</button></div></div>`).join(''):'<div class="empty">🎉 没有待决定的事务</div>';
+ // 课表
+ const cl=document.getElementById('courseList');const dn=['周日','周一','周二','周三','周四','周五','周六'];
+ cl.innerHTML=courses.length?courses.map((c,i)=>`<div class="item"><div class="t"><div class="title">${esc(c.name)}</div><div class="meta">${dn[c.day]} ${c.start}–${c.end}${c.room?' · '+esc(c.room):''}</div></div><button class="act" onclick="delCourse(${i})">删除</button></div>`).join(''):'<div class="empty">还没有课程，点右上角添加</div>';
+ // 课程下拉
+ const sel=document.getElementById('fCourse');const cur=sel.value;sel.innerHTML='<option value="">不限课程</option>'+courses.map(c=>`<option>${esc(c.name)}</option>`).join('');sel.value=cur;
+}
+function todoHTML(i){return `<div class="item ${i.done?'done':''}"><div class="dot ${prio(i)}"></div><div class="t"><div class="title" onclick="toggleDone(${i.id})" style="cursor:pointer">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${i.date} ${i.time||''} · ${dlText(i)}</div></div><button class="act" onclick="delItem(${i.id})">✕</button></div>`}
+function itemHTML(o){return `<div class="item"><div class="dot ${o.cls}"></div><div class="t"><div class="title">${esc(o.title)}</div><div class="meta">${o.tags.map(typeTag).join('')}${esc(o.meta)}</div></div></div>`}
+function toggleRaw(id){document.getElementById('raw'+id).classList.toggle('open')}
+function decide(id,join){const i=inbox.find(x=>x.id===id);if(join){items.push({id:Date.now(),title:i.title,date:i.date||new Date().toISOString().slice(0,10),time:'23:59',type:i.type,done:false});i.status='已参加'}else i.status='不参加';save()}
+function toggleDone(id){const i=items.find(x=>x.id===id);i.done=!i.done;save()}
+function delItem(id){items=items.filter(x=>x.id!==id);save()}
+function delCourse(i){courses.splice(i,1);save()}
+function openAdd(){document.getElementById('modal').classList.add('on');document.getElementById('fDate').value=new Date().toISOString().slice(0,10)}
+function openCourseAdd(){document.getElementById('modalC').classList.add('on')}
+function closeModal(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('on'))}
+function saveItem(){const t=document.getElementById('fTitle').value.trim();if(!t)return alert('请填写名称');
+ items.push({id:Date.now(),title:t,date:document.getElementById('fDate').value,time:document.getElementById('fTime').value,type:document.getElementById('fType').value,course:document.getElementById('fCourse').value,done:false});
+ document.getElementById('fTitle').value='';closeModal();save()}
+function saveCourse(){const n=document.getElementById('cName').value.trim();if(!n)return alert('请填写课程名');
+ courses.push({name:n,day:+document.getElementById('cDay').value,start:document.getElementById('cStart').value,end:document.getElementById('cEnd').value,room:document.getElementById('cRoom').value.trim()});
+ document.getElementById('cName').value='';closeModal();save()}
+function exportReminders(){const urgent=items.filter(i=>!i.done&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=3)
+ .sort((a,b)=>a.date.localeCompare(b.date)).map(i=>`${i.date} ${i.time||''} 截止：${i.title}`).join('\n');
+ if(!urgent)return alert('3天内没有临近截止的待办');
+ navigator.clipboard.writeText(urgent).then(()=>alert('已复制！去 iPhone「提醒事项」新建清单粘贴即可获得真机提醒'))}
+function exportData(){const blob=new Blob([JSON.stringify({items,courses,inbox},null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='工作台备份.json';a.click()}
+function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.getElementById('page-'+p).classList.add('on');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p))}
+// 跨设备云同步轮询（每60秒拉一次）
+setInterval(()=>{if(window.AV&&AV.applicationId)pullCloud()},60000);
+renderAll();
+</script>
+</body>
+</html>
