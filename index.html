@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>我的工作台</title>
-<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
+<script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.10.0/cloudbase.full.js"></script>
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--ink:#222;--sub:#888;--red:#e5484d;--yellow:#f5a623;--green:#2f9e44;--blue:#3b82f6;--line:#e8e8ec;--radius:14px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -99,9 +99,8 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
   <!-- 设置 -->
   <div class="page" id="page-set">
     <div class="card"><h3>☁️ 云同步（多设备共享数据）</h3>
-      <div class="hint">1. 打开 <b>leancloud.cn</b> 免费注册 → 创建"开发版"应用<br>2. 在 设置→应用凭证 里复制 AppID 和 AppKey，粘贴到下面（三台设备填同一组即可实时同步）</div>
-      <input type="text" id="lcAppId" placeholder="AppID" style="margin-top:8px">
-      <input type="text" id="lcAppKey" placeholder="AppKey" style="margin-top:8px">
+      <div class="hint">填入腾讯云 CloudBase 的<b>环境 ID</b>（在 CloudBase 控制台首页可看到，形如 xxx-yyy123），三台设备填同一个即可实时同步。需提前在控制台：①开启「匿名登录」 ②Web 安全域名添加 <b>https://qfdbt.github.io</b> ③数据库集合 workbench 权限设为「所有用户可读写」</div>
+      <input type="text" id="tcbEnv" placeholder="环境 ID，如 my-workbench-1g2h3j" style="margin-top:8px">
       <div class="frow"><button class="act pri" onclick="saveLC()">保存并连接</button><button class="act" onclick="pullCloud()">立即同步</button></div>
       <div class="hint" id="lcStatus"></div>
     </div>
@@ -144,23 +143,26 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 // ===== 数据层 =====
 let items=[],courses=[],inbox=[];
 const load=()=>{try{items=JSON.parse(localStorage.items||'[]');courses=JSON.parse(localStorage.courses||'[]');inbox=JSON.parse(localStorage.inbox||'[]');}catch(e){}};
-const save=()=>{localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);if(window.AV&&AV.applicationId)pushCloud();renderAll();};
+const save=()=>{localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);if(cloudReady)pushCloud();renderAll();};
 load();
 
-// ===== 云同步 =====
-let cloudObj=null;
-function initLC(){const id=localStorage.lcId,k=localStorage.lcKey;if(!id||!k)return false;
- try{AV.init({appId:id,appKey:k});return true}catch(e){return false}}
-function saveLC(){localStorage.lcId=document.getElementById('lcAppId').value.trim();localStorage.lcKey=document.getElementById('lcAppKey').value.trim();
- if(initLC()){document.getElementById('lcStatus').textContent='✅ 已连接，数据将自动同步';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查 AppID/Key'}}
-async function pushCloud(){if(!window.AV||!AV.applicationId)return;
- try{if(!cloudObj){const q=new AV.Query('WorkbenchData');q.equalTo('uid','main');cloudObj=await q.first()||new (AV.Object.extend('WorkbenchData'))();cloudObj.set('uid','main');}
- cloudObj.set('data',JSON.stringify({items,courses,inbox}));await cloudObj.save();}catch(e){}}
-async function pullCloud(){if(!window.AV||!AV.applicationId){document.getElementById('lcStatus').textContent='未配置云同步';return}
- try{const q=new AV.Query('WorkbenchData');q.equalTo('uid','main');const o=await q.first();
- if(o&&o.get('data')){const d=JSON.parse(o.get('data'));items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];save();renderAll();}
+// ===== 云同步（腾讯云 CloudBase）=====
+let tcbApp=null,cloudReady=false;
+function initTCB(){const env=localStorage.tcbEnv;if(!env||!window.cloudbase)return false;
+ try{tcbApp=cloudbase.init({env});cloudReady=true;
+  try{tcbApp.auth({persistence:'local'}).signInAnonymously().catch(()=>{})}catch(e){}
+  return true}catch(e){return false}}
+async function tcbDoc(){const db=tcbApp.database();const res=await db.collection('workbench').where({uid:'main'}).get();
+ if(res.data&&res.data.length)return res.data[0];await db.collection('workbench').add({uid:'main'});const r2=await db.collection('workbench').where({uid:'main'}).get();return r2.data[0]}
+function saveLC(){localStorage.tcbEnv=document.getElementById('tcbEnv').value.trim();
+ if(initTCB()){document.getElementById('lcStatus').textContent='✅ 已连接，正在同步…';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查环境 ID'}}
+async function pushCloud(){if(!cloudReady)return;
+ try{const doc=await tcbDoc();await tcbApp.database().collection('workbench').doc(doc._id).update({data:JSON.stringify({items,courses,inbox})});}catch(e){}}
+async function pullCloud(){if(!cloudReady){document.getElementById('lcStatus').textContent='未配置云同步';return}
+ try{const res=await tcbApp.database().collection('workbench').where({uid:'main'}).get();
+ if(res.data&&res.data.length&&res.data[0].data){const d=JSON.parse(res.data[0].data);items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);renderAll();}
  document.getElementById('lcStatus').textContent='✅ 同步完成 '+new Date().toLocaleTimeString();}catch(e){document.getElementById('lcStatus').textContent='⚠️ 同步失败：'+e.message}}
-if(initLC())setTimeout(pullCloud,500);
+if(initTCB())setTimeout(pullCloud,500);
 
 // ===== 智能解析 =====
 function parseText(text){
@@ -272,7 +274,8 @@ function exportData(){const blob=new Blob([JSON.stringify({items,courses,inbox},
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));document.getElementById('page-'+p).classList.add('on');
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p))}
 // 跨设备云同步轮询（每60秒拉一次）
-setInterval(()=>{if(window.AV&&AV.applicationId)pullCloud()},60000);
+setInterval(()=>{if(cloudReady)pullCloud()},60000);
+if(localStorage.tcbEnv)document.getElementById('tcbEnv').value=localStorage.tcbEnv;
 renderAll();
 </script>
 </body>
