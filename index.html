@@ -21,7 +21,8 @@ body.dark .tt-t,body.dark .weekgrid .d,body.dark button.act{background:#223244;b
 body.dark .tt-c.empty{background:rgba(255,255,255,.04)}
 body.dark .parsed{background:#1d3040;border-color:#2c4a63}
 body.dark .item{border-top-color:#2c3d4f}
-header{background:linear-gradient(135deg,#a8dcff 0%,#7ec8f2 55%,#9ad4f7 100%);color:#fff;padding:22px 18px 16px;border-radius:0 0 26px 26px;box-shadow:0 4px 18px rgba(126,200,242,.35);position:relative;overflow:hidden}
+header{background:linear-gradient(135deg,#a8dcff 0%,#7ec8f2 55%,#9ad4f7 100%);color:#fff;padding:22px 18px 16px;border-radius:0 0 26px 26px;box-shadow:0 4px 18px rgba(126,200,242,.35);position:sticky;top:0;z-index:40;overflow:hidden}
+body.dark header{background:linear-gradient(135deg,#2b4a63,#1f3a50)}
 header::after{content:'☁️ 🐶 ☁️';position:absolute;right:16px;top:14px;font-size:15px;opacity:.9;letter-spacing:4px}
 header h1{font-size:20px;font-weight:700;text-shadow:0 1px 3px rgba(90,160,210,.45)}
 header .date{opacity:.85;font-size:13px;margin-top:2px}
@@ -65,7 +66,7 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 .chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--sub);background:#fff;color:transparent;font-size:15px;line-height:22px;cursor:pointer;flex-shrink:0;transition:.2s;padding:0}
 .chk:hover{border-color:var(--green)}
 .chk.on{background:var(--green);border-color:var(--green);color:#fff}
-body.dark .chk{background:#223244;color:transparent}
+body.dark .chk{background:#16202b;color:transparent;border-color:#5a7d96}
 body.dark .chk.on{background:var(--green);color:#fff}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:100;align-items:flex-end;justify-content:center}
 .modal.on{display:flex}
