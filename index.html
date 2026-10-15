@@ -273,7 +273,8 @@ function renderAll(){
  active.forEach(c=>{const s=slots.find(s=>s.start===c.start&&s.end===c.end);if(!s)slots.push({start:c.start,end:c.end})});
  slots.sort((a,b)=>a.start.localeCompare(b.start));
  let g='<div class="tt-h" style="background:#f2fafe;color:var(--sub)">周次</div>';
- for(let d0=1;d0<=7;d0++){const idx=(d0)%7;g+=`<div class="tt-h${idx===new Date().getDay()?' today':''}">${dn[idx]}<br>${weekDates[idx===0?6:idx-1]||''}</div>`}
+ g+=`<div class="tt-h" style="grid-column:1;grid-row:1;background:#f2fafe;color:var(--sub)">周次</div>`;
+ for(let d0=1;d0<=7;d0++){const idx=(d0)%7;g+=`<div class="tt-h${idx===new Date().getDay()?' today':''}" style="grid-column:${d0+1};grid-row:1">${dn[idx]}<br>${weekDates[idx===0?6:idx-1]||''}</div`+`>`}
  // 严格超级课程表式：左侧逐节 1-11，课程格按节次跨行
  const PERIODS=[['1','08:00','08:45'],['2','08:55','09:40'],['3','09:50','10:35'],['4','10:45','11:30'],['5','13:20','14:05'],['6','14:15','15:00'],['7','15:10','15:55'],['8','16:05','16:50'],['9','18:20','19:05'],['10','19:15','20:00'],['11','20:10','20:55']];
  function toRange(c){const k=c.start+'-'+c.end;const M={'08:00-11:50':[1,4],'13:20-17:10':[5,8],'13:20-15:10':[5,6],'18:20-21:05':[9,11]};
@@ -283,17 +284,17 @@ function renderAll(){
   const e=toMin(c.end);let b=a;for(let i=a-1;i<PERIODS.length;i++){if(toMin(PERIODS[i][2])<=e)b=i+1}
   return [Math.min(a,11),Math.max(b,a)];
  }
- for(let p=0;p<11;p++){g+=`<div class="tt-t"><b style="color:#4aa8e8">${PERIODS[p][0]}</b><br>${PERIODS[p][1]}<br>${PERIODS[p][2]}</div>`}
+ for(let p=0;p<11;p++){g+=`<div class="tt-t" style="grid-column:1;grid-row:${p+2}"><b style="color:#4aa8e8">${PERIODS[p][0]}</b><br>${PERIODS[p][1]}<br>${PERIODS[p][2]}</div>`}
  const spanned=new Set();
  for(let p=0;p<11;p++){
   for(let d0=1;d0<=7;d0++){const idx=d0%7;
    if(spanned.has(p+'-'+idx))continue;
    const cell=active.filter(c=>+c.day===idx&&(r=>p+1>=r[0]&&p+1<=r[1])(toRange(c)));
-   if(!cell.length){g+='<div class="tt-c empty"></div>';continue}
+   if(!cell.length){g+=`<div class="tt-c empty" style="grid-column:${d0+1};grid-row:${p+2}"></div>`;continue}
    const c=cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
    const r=toRange(c);const span=r[1]-r[0]+1;
    for(let q=r[0];q<=r[1];q++)spanned.add((q-1)+'-'+idx);
-   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-row:${p+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
+   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-column:${d0+1};grid-row:${r[0]+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
   }
  }
  cl.innerHTML='<div class="tt-legend"><span>第 '+cw+' 周 · '+SEM_START.slice(5).replace('-','/')+' 开学</span><span><i style="background:#7ec8f2"></i>本周有课</span><span><i style="background:#dceefb"></i>非本周（点击格子可删除）</span></div><div class="timetable-wrap"><div class="timetable">'+g+'</div></div><div class="hint">💡 手机上左右滑动查看周六周日 · 添加课程时填周次（如 9-16）即可自动跨周切换</div>';
