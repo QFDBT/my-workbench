@@ -294,10 +294,10 @@ function renderAll(){
    const c=cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
    const r=toRange(c);const span=r[1]-r[0]+1;
    for(let q=r[0];q<=r[1];q++)spanned.add((q-1)+'-'+idx);
-   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-column:${d0+1};grid-row:${r[0]+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
+   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-column:${d0+1};grid-row:${r[0]+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
   }
  }
- cl.innerHTML='<div class="tt-legend"><span>第 '+cw+' 周 · '+SEM_START.slice(5).replace('-','/')+' 开学</span><span><i style="background:#7ec8f2"></i>本周有课</span><span><i style="background:#dceefb"></i>非本周（点击格子可删除）</span></div><div class="timetable-wrap"><div class="timetable">'+g+'</div></div><div class="hint">💡 手机上左右滑动查看周六周日 · 添加课程时填周次（如 9-16）即可自动跨周切换</div>';
+ cl.innerHTML='<div class="tt-legend"><span>第 '+cw+' 周 · '+SEM_START.slice(5).replace('-','/')+' 开学</span><span><i style="background:#7ec8f2"></i>本周有课</span><span><i style="background:#dceefb"></i>非本周</span></div><div class="timetable-wrap"><div class="timetable">'+g+'</div></div><div class="hint">💡 手机上左右滑动查看周六周日 · 添加课程时填周次（如 9-16）即可自动跨周切换</div>';
  // 课程下拉
  const sel=document.getElementById('fCourse');const cur=sel.value;sel.innerHTML='<option value="">不限课程</option>'+courses.map(c=>`<option>${esc(c.name)}</option>`).join('');sel.value=cur;
 }
