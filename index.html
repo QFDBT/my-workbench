@@ -8,10 +8,10 @@
 <title>我的工作台</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bg:#e8f4fd;--card:#ffffff;--ink:#3a556e;--sub:#8fb4cc;--red:#f2778d;--yellow:#f5b942;--green:#5fc2a0;--blue:#7ec8f2;--line:#dceefb;--radius:18px}
+:root{--nav-height:64px;--bg:#e8f4fd;--card:#ffffff;--ink:#3a556e;--sub:#8fb4cc;--red:#f2778d;--yellow:#f5b942;--green:#5fc2a0;--blue:#7ec8f2;--line:#dceefb;--radius:18px}
 body{background:url('cinna-bg.jpg') repeat fixed / 260px auto,linear-gradient(180deg,#eaf7ff,#e8f4fd);background-attachment:fixed}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:80px}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px))}
 body.dark{--bg:#16202b;--card:#1f2c3a;--ink:#dce9f5;--sub:#7f95a8;--line:#2c3d4f}
 body.dark{background:url('cinna-bg.jpg') repeat fixed / 260px auto,#16202b;background-blend-mode:soft-light;background-attachment:fixed}
 body.dark header{background:linear-gradient(135deg,#2b4a63,#1f3a50)}
@@ -27,9 +27,9 @@ header::after{content:'☁️ 🐶 ☁️';position:absolute;right:16px;top:14px
 header h1{font-size:20px;font-weight:700;text-shadow:0 1px 3px rgba(90,160,210,.45)}
 header .date{opacity:.85;font-size:13px;margin-top:2px}
 header .alerts{margin-top:10px;font-size:13px;background:rgba(255,255,255,.32);border-radius:12px;padding:8px 12px;display:none;backdrop-filter:blur(4px)}
-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);border-top:1px solid var(--line);display:flex;z-index:50;padding-bottom:min(env(safe-area-inset-bottom),6px);box-shadow:0 -3px 14px rgba(126,200,242,.18);backdrop-filter:blur(8px)}
-nav button{flex:1;background:none;border:none;padding:5px 0 4px;font-size:10px;color:var(--sub);cursor:pointer}
-nav button .ic{font-size:17px;display:block}
+nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));padding:0 0 env(safe-area-inset-bottom, 0px);box-sizing:border-box;display:flex;align-items:center;background:rgba(255,255,255,.96);border-top:1px solid var(--line);box-shadow:0 -3px 14px rgba(126,200,242,.16);backdrop-filter:blur(8px);z-index:50}
+nav button{flex:1;height:var(--nav-height);padding:4px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--sub);font-size:11px;line-height:1.2;cursor:pointer}
+nav button .ic{display:block;font-size:20px;line-height:1}
 nav button.on{color:#4aa8e8;font-weight:600}
 main{padding:14px;max-width:640px;margin:0 auto}
 .page{display:none}
@@ -61,7 +61,7 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 .weekgrid .d{flex:1;text-align:center;padding:8px 0;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:12px}
 .weekgrid .d.today{background:linear-gradient(135deg,#7ec8f2,#5db6ee);color:#fff;border-color:#7ec8f2;box-shadow:0 3px 10px rgba(126,200,242,.4)}
 .weekgrid .d b{display:block;font-size:16px}
-.fab{position:fixed;right:18px;bottom:62px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8fd0f5,#5db6ee);color:#fff;font-size:26px;border:none;box-shadow:0 4px 16px rgba(126,200,242,.5);cursor:pointer;z-index:60;transition:.2s}
+.fab{position:fixed;right:18px;bottom:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 14px);width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#8fd0f5,#5db6ee);color:#fff;font-size:26px;border:none;box-shadow:0 4px 16px rgba(126,200,242,.5);cursor:pointer;z-index:60;transition:.2s}
 .fab:hover{transform:scale(1.08) rotate(8deg)}
 .chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--sub);background:#fff;color:transparent;font-size:15px;line-height:22px;cursor:pointer;flex-shrink:0;transition:.2s;padding:0}
 .chk:hover{border-color:var(--green)}
