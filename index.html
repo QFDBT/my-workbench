@@ -12,6 +12,15 @@
 body{background:url('cinna-bg.jpg') repeat fixed / 260px auto,linear-gradient(180deg,#eaf7ff,#e8f4fd);background-attachment:fixed}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:80px}
+body.dark{--bg:#16202b;--card:#1f2c3a;--ink:#dce9f5;--sub:#7f95a8;--line:#2c3d4f}
+body.dark{background:url('cinna-bg.jpg') repeat fixed / 260px auto,#16202b;background-blend-mode:soft-light;background-attachment:fixed}
+body.dark header{background:linear-gradient(135deg,#2b4a63,#1f3a50)}
+body.dark .card{background:rgba(31,44,58,.88);border-color:#2c3d4f;box-shadow:0 3px 14px rgba(0,0,0,.3)}
+body.dark nav{background:rgba(22,32,43,.96)}
+body.dark .tt-t,body.dark .weekgrid .d,body.dark button.act{background:#223244;border-color:#2c3d4f;color:var(--ink)}
+body.dark .tt-c.empty{background:rgba(255,255,255,.04)}
+body.dark .parsed{background:#1d3040;border-color:#2c4a63}
+body.dark .item{border-top-color:#2c3d4f}
 header{background:linear-gradient(135deg,#a8dcff 0%,#7ec8f2 55%,#9ad4f7 100%);color:#fff;padding:22px 18px 16px;border-radius:0 0 26px 26px;box-shadow:0 4px 18px rgba(126,200,242,.35);position:relative;overflow:hidden}
 header::after{content:'☁️ 🐶 ☁️';position:absolute;right:16px;top:14px;font-size:15px;opacity:.9;letter-spacing:4px}
 header h1{font-size:20px;font-weight:700;text-shadow:0 1px 3px rgba(90,160,210,.45)}
@@ -83,6 +92,7 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 <main>
   <!-- 时间轴 -->
   <div class="page on" id="page-timeline">
+    <div class="card" id="weekStats"></div>
     <div class="weekgrid" id="weekGrid"></div>
     <div id="timelineBody"></div>
   </div>
@@ -100,9 +110,14 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
       <div id="parseResult"></div>
     </div>
     <div class="card"><h3>收件记录</h3><div id="inboxList"></div></div>
+    <div class="card"><h3>📎 附件与链接仓库 <span class="op" id="linkCount"></span></h3><div id="linkList"></div><div class="hint">解析消息时自动收集老师发的下载链接，交作业前一键直达</div></div>
   </div>
   <!-- 事务筛选 -->
   <div class="page" id="page-triage">
+    <div class="card"><h3>💰 工时/学分账本 <span class="op" onclick="addLedger()">＋ 记一笔</span></h3><div id="ledgerList"></div>
+      <div class="hint">报名、完成后在这里记一笔，工时和学分自动累计</div>
+    </div>
+    <div class="card"><h3>📋 入党材料清单 <span class="op" onclick="addCheck()">＋ 添加材料</span></h3><div id="checkList"></div></div>
     <div class="card"><h3>🎯 待你决定的事务</h3><div class="hint">这些事项涉及工时/学分/志愿/班级事务，点击"参加"会加入你的时间轴</div><div id="triageList"></div></div>
   </div>
   <!-- 课表 -->
@@ -124,6 +139,11 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
       <div class="hint">点下方按钮会把"3天内截止的待办"复制成清单，粘贴进 iPhone 自带"提醒事项"App，即可获得真机闹钟式提醒（详细自动化设置见使用说明）</div>
       <div class="frow"><button class="act pri" onclick="exportReminders()">复制临近截止清单</button></div>
     </div>
+    <div class="card"><h3>🌙 深色模式</h3><div class="frow">
+      <button class="act" id="dkAuto" onclick="setDark('auto')">自动（晚7点后）</button>
+      <button class="act" id="dkOn" onclick="setDark('on')">常开</button>
+      <button class="act" id="dkOff" onclick="setDark('off')">常关</button>
+    </div><div class="hint" id="dkStatus"></div></div>
     <div class="card"><h3>🗑️ 数据</h3><div class="frow"><button class="act" onclick="exportData()">导出备份</button></div></div>
   </div>
 </main>
@@ -158,9 +178,9 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 </nav>
 <script>
 // ===== 数据层 =====
-let items=[],courses=[],inbox=[];
-const load=()=>{try{items=JSON.parse(localStorage.items||'[]');courses=JSON.parse(localStorage.courses||'[]');inbox=JSON.parse(localStorage.inbox||'[]');}catch(e){}};
-const save=()=>{localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);if(cloudReady)pushCloud();renderAll();};
+let items=[],courses=[],inbox=[],links=[],ledger=[],checklist=[];
+const load=()=>{try{items=JSON.parse(localStorage.items||'[]');courses=JSON.parse(localStorage.courses||'[]');inbox=JSON.parse(localStorage.inbox||'[]');links=JSON.parse(localStorage.links||'[]');ledger=JSON.parse(localStorage.ledger||'[]');checklist=JSON.parse(localStorage.checklist||'[]');}catch(e){}};
+const save=()=>{localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);localStorage.links=JSON.stringify(links);localStorage.ledger=JSON.stringify(ledger);localStorage.checklist=JSON.stringify(checklist);if(cloudReady)pushCloud();renderAll();};
 load();
 
 // ===== 云同步（Supabase）=====
@@ -171,11 +191,11 @@ function initSB(){const url=localStorage.sbUrl||SB_DEFAULT.url,key=localStorage.
 function saveLC(){localStorage.sbUrl=document.getElementById('sbUrl').value.trim().replace(/\/+$/,'');localStorage.sbKey=document.getElementById('sbKey').value.trim();
  if(initSB()){document.getElementById('lcStatus').textContent='✅ 已连接，正在同步…';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查 URL 和 key'}}
 async function pushCloud(){if(!cloudReady)return;
- try{await sb.from('workbench').upsert({id:1,data:{items,courses,inbox},updated_at:new Date().toISOString()});}catch(e){}}
+ try{await sb.from('workbench').upsert({id:1,data:{items,courses,inbox,links,ledger,checklist},updated_at:new Date().toISOString()});}catch(e){}}
 async function pullCloud(){if(!cloudReady){document.getElementById('lcStatus').textContent='未配置云同步';return}
  try{const res=await sb.from('workbench').select('data').eq('id',1).maybeSingle();
  if(res.error)throw res.error;
- if(res.data&&res.data.data){const d=res.data.data;items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);renderAll();}
+ if(res.data&&res.data.data){const d=res.data.data;items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];links=d.links||[];ledger=d.ledger||[];checklist=d.checklist||[];localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);localStorage.links=JSON.stringify(links);localStorage.ledger=JSON.stringify(ledger);localStorage.checklist=JSON.stringify(checklist);renderAll();}
  document.getElementById('lcStatus').textContent=res.data?'✅ 同步完成 '+new Date().toLocaleTimeString():'✅ 已连接（云端暂无数据，本机数据将自动上传）';}catch(e){document.getElementById('lcStatus').textContent='⚠️ 同步失败：'+(e.message||e)+'（若提示表不存在，请先在 Supabase SQL Editor 执行建表语句）'}}
 if(initSB())setTimeout(pullCloud,500);
 
@@ -203,10 +223,13 @@ const pad=n=>String(n).padStart(2,'0');
 function parsePaste(){
  const t=document.getElementById('pasteBox').value.trim();if(!t)return;
  const r=parseText(t);
+ window.__pUrls=[...new Set([...t.matchAll(/https?:\/\/[^\s，。；)）\]]+/g)].map(m=>m[0]))];
+ if(window.__pUrls.length)r.urls=window.__pUrls;
  document.getElementById('parseResult').innerHTML=`<div class="parsed"><b>识别结果：</b><br>📌 ${esc(r.title)}<br>⏰ ${r.date||'（未识别日期，请手动选）'} ${r.time}<br>🏷️ ${r.type}${r.isTriage?'<br>🎯 已归入「事务筛选」，等你在事务页决定是否参加':''}
  <div class="frow"><button class="act pri" onclick='confirmParse(${JSON.stringify(JSON.stringify(r))},${JSON.stringify(JSON.stringify(t))})'>确认保存</button></div></div>`;
 }
 function confirmParse(rJson,tJson){const r=JSON.parse(rJson);
+ if(window.__pUrls&&window.__pUrls.length){window.__pUrls.forEach((u,i)=>links.push({id:Date.now()+i,title:r.title.slice(0,30),url:u,course:'',date:r.date||''}));window.__pUrls=null;}
  if(!r.date){r.date=prompt('未识别到截止日期，请输入（格式 2026-10-20）：')||null;if(!r.date)return}
  if(r.isTriage){inbox.push({id:Date.now(),text:tJson.slice(0,1)?JSON.parse(tJson):'',title:r.title,date:r.date,type:r.type,status:'待决定',raw:JSON.parse(tJson)})}
  else items.push({id:Date.now(),title:r.title,date:r.date,time:r.time,type:r.type,done:false});
@@ -229,6 +252,14 @@ function renderAll(){
  const ab=document.getElementById('alertBar');
  ab.style.display=urgent.length?'block':'none';
  ab.innerHTML=urgent.length?'🔔 '+urgent.length+' 项临近截止：'+esc(urgent[0].title)+(urgent.length>1?' 等':''):'';
+ // 本周概览
+ {const cw=curWeek();
+  const nCourse=courses.filter(c=>weekOn(cw,c.weeks)).length;
+  const nDue=items.filter(i=>!i.done&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=7).length;
+  const nAct=items.filter(i=>!i.done&&(i.type==='志愿活动'||i.type==='班级事务')&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=14).length;
+  const totalH=ledger.reduce((s,x)=>s+(x.hours||0),0),totalC=ledger.reduce((s,x)=>s+(x.credit||0),0);
+  const ckDone=checklist.filter(c=>c.done).length;
+  document.getElementById('weekStats').innerHTML='<h3>📊 本周概览</h3><div style="font-size:13px;line-height:2">📚 本周上课 <b>'+nCourse+'</b> 门　⏰ 7天内截止 <b style="color:var(--red)">'+nDue+'</b> 项　🎯 近两周活动/事务 <b>'+nAct+'</b> 项<br>💰 工时累计 <b>'+totalH+'</b> h · 学分累计 <b>'+totalC+'</b> 分　📋 入党材料 '+ckDone+'/'+checklist.length+' 完成</div>';}
  // 周历
  const wg=document.getElementById('weekGrid');const now=new Date();let h='';
  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()+i);
@@ -261,6 +292,16 @@ function renderAll(){
  const trl=document.getElementById('triageList');const pend=inbox.filter(i=>i.status==='待决定');
  trl.innerHTML=pend.length?pend.map(i=>`<div class="item"><div class="t"><div class="title">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${i.date?' 建议 '+i.date:''}</div></div>
   <div><button class="act pri" onclick="decide(${i.id},1)">参加</button><button class="act" onclick="decide(${i.id},0)">不参加</button></div></div>`).join(''):'<div class="empty">🎉 没有待决定的事务</div>';
+ // 附件链接
+ const ll=document.getElementById('linkList');
+ if(ll){ll.innerHTML=links.length?links.map(l=>`<div class="item"><div class="t"><div class="title"><a href="${esc(l.url)}" target="_blank" style="color:var(--blue);word-break:break-all">🔗 ${esc(l.title||l.url)}</a></div><div class="meta">${l.date||''} ${l.course?'· '+esc(l.course):''}</div></div><button class="act" onclick="delLink(${l.id})">✕</button></div>`).join(''):'<div class="empty">暂无链接，在收件箱粘贴含链接的消息会自动收集</div>';
+  const lc=document.getElementById('linkCount');if(lc)lc.textContent=links.length?links.length+' 个':'';}
+ // 账本+清单
+ const lg=document.getElementById('ledgerList');
+ if(lg){const th=ledger.reduce((s,x)=>s+(x.hours||0),0),tc=ledger.reduce((s,x)=>s+(x.credit||0),0);
+  lg.innerHTML='<div class="meta" style="font-size:13px;margin-bottom:6px">💰 工时合计 <b style="color:var(--red)">'+th+'</b> h　🎓 学分合计 <b style="color:var(--red)">'+tc+'</b> 分</div>'+(ledger.length?ledger.slice().reverse().map(x=>`<div class="item"><div class="t"><div class="title">${esc(x.name)}</div><div class="meta">${x.date||''} · ${x.hours?x.hours+'h':''}${x.hours&&x.credit?' + ':''}${x.credit?x.credit+'分':''}</div></div><button class="act" onclick="delLedger(${x.id})">✕</button></div>`).join(''):'<div class="empty">还没有记录</div>');}
+ const ck=document.getElementById('checkList');
+ if(ck){ck.innerHTML=checklist.length?checklist.map(x=>`<div class="item ${x.done?'done':''}"><div class="dot ${x.done?'green':'yellow'}"></div><div class="t"><div class="title" onclick="toggleCheck(${x.id})" style="cursor:pointer">${esc(x.text)}</div></div><button class="act" onclick="delCheck(${x.id})">✕</button></div>`).join(''):'<div class="empty">添加入党/综测需要的材料，点标题打勾</div>';}
  // 课表
  const cl=document.getElementById('courseList');const dn=['周日','周一','周二','周三','周四','周五','周六'];
  const cw=curWeek();
@@ -317,6 +358,17 @@ function saveItem(){const t=document.getElementById('fTitle').value.trim();if(!t
 function saveCourse(){const n=document.getElementById('cName').value.trim();if(!n)return alert('请填写课程名');
  courses.push({name:n,day:+document.getElementById('cDay').value,start:document.getElementById('cStart').value,end:document.getElementById('cEnd').value,room:document.getElementById('cRoom').value.trim(),weeks:document.getElementById('cWeeks').value.trim()});
  document.getElementById('cName').value='';closeModal();save()}
+function addLedger(){const n=prompt('事项名称（如：图书馆志愿）');if(!n)return;const h=parseFloat(prompt('工时数（无则填0）')||0);const cr=parseFloat(prompt('学分数（无则填0）')||0);
+ ledger.push({id:Date.now(),name:n,hours:h,credit:cr,date:new Date().toISOString().slice(0,10)});save()}
+function delLedger(id){ledger=ledger.filter(x=>x.id!==id);save()}
+function addCheck(){const t=prompt('材料名称（如：思想汇报第3篇）');if(!t)return;checklist.push({id:Date.now(),text:t,done:false});save()}
+function toggleCheck(id){const c=checklist.find(x=>x.id===id);c.done=!c.done;save()}
+function delCheck(id){checklist=checklist.filter(x=>x.id!==id);save()}
+function delLink(id){links=links.filter(x=>x.id!==id);save()}
+function applyTheme(){const m=localStorage.darkMode||'auto';const h=new Date().getHours();
+ const dark=m==='on'||(m==='auto'&&(h>=19||h<7));document.body.classList.toggle('dark',dark);
+ const st=document.getElementById('dkStatus');if(st)st.textContent='当前模式：'+(m==='auto'?'自动（现在是'+(dark?'深色':'浅色')+'）':m==='on'?'常开深色':'常关浅色');}
+function setDark(m){localStorage.darkMode=m;applyTheme()}
 function exportReminders(){const urgent=items.filter(i=>!i.done&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=3)
  .sort((a,b)=>a.date.localeCompare(b.date)).map(i=>`${i.date} ${i.time||''} 截止：${i.title}`).join('\n');
  if(!urgent)return alert('3天内没有临近截止的待办');
@@ -328,6 +380,7 @@ function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove(
 // 跨设备云同步轮询（每60秒拉一次）
 setInterval(()=>{if(cloudReady)pullCloud()},60000);
 if(localStorage.sbUrl)document.getElementById('sbUrl').value=localStorage.sbUrl;if(localStorage.sbKey)document.getElementById('sbKey').value=localStorage.sbKey;
+applyTheme();
 renderAll();
 </script>
 </body>
