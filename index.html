@@ -60,14 +60,15 @@ textarea,input[type=text],input[type=date],input[type=time],select{width:100%;bo
 @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:20px}}
 .dayhead{font-size:13px;color:var(--sub);margin:14px 0 6px;font-weight:600}
 .timetable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
-.timetable{display:grid;grid-template-columns:46px repeat(7,minmax(64px,1fr));gap:3px;min-width:580px}
+.timetable{display:grid;grid-template-columns:46px repeat(7,minmax(64px,1fr));grid-auto-rows:46px;gap:3px;min-width:580px}
+.timetable .tt-h{grid-row:1}
 .tt-h{font-size:11px;text-align:center;padding:5px 0;border-radius:8px;background:#e3f3ff;color:#4aa8e8;font-weight:600}
 .tt-h.today{background:linear-gradient(135deg,#7ec8f2,#5db6ee);color:#fff}
 .tt-t{font-size:10px;color:var(--sub);text-align:center;padding:6px 2px;border-radius:8px;background:#f2fafe;word-break:break-all}
-.tt-c{border-radius:10px;padding:6px 4px;font-size:10px;line-height:1.4;min-height:64px;color:#fff;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.tt-c{border-radius:10px;padding:4px 3px;font-size:10px;line-height:1.35;color:#fff;overflow:hidden;display:flex;flex-direction:column;justify-content:center;text-align:center;z-index:2}
 .tt-c b{font-size:11px;margin-bottom:2px}
-.tt-c span{opacity:.9;font-size:9.5px}
-.tt-c.empty{background:rgba(240,249,255,.6);min-height:64px}
+.tt-c span{opacity:.92;font-size:9.5px}
+.tt-c.empty{background:rgba(240,249,255,.6)}
 .tt-legend{font-size:11px;color:var(--sub);margin:8px 0 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tt-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
 .tt-past{opacity:.45}
@@ -273,16 +274,26 @@ function renderAll(){
  slots.sort((a,b)=>a.start.localeCompare(b.start));
  let g='<div class="tt-h" style="background:#f2fafe;color:var(--sub)">周次</div>';
  for(let d0=1;d0<=7;d0++){const idx=(d0)%7;g+=`<div class="tt-h${idx===new Date().getDay()?' today':''}">${dn[idx]}<br>${weekDates[idx===0?6:idx-1]||''}</div>`}
- const SLOT_NAMES={'08:00-11:50':'第1-4节','13:20-15:10':'第5-6节','13:20-17:10':'第5-8节','18:20-21:05':'第9-11节','08:00-09:50':'第1-2节','10:00-11:50':'第3-4节','13:20-15:00':'第5-6节','15:10-17:10':'第7-8节','18:20-20:10':'第9-10节'};
- for(const s of slots){
-  const key=s.start+'-'+s.end;
-  const lab=SLOT_NAMES[key]||(s.start.startsWith('08')?'上午':s.start.startsWith('13')?'下午':'晚上');
-  g+=`<div class="tt-t"><b style="color:#4aa8e8">${lab}</b><br>${s.start}<br>${s.end}</div>`;
+ // 严格超级课程表式：左侧逐节 1-11，课程格按节次跨行
+ const PERIODS=[['1','08:00','08:45'],['2','08:55','09:40'],['3','09:50','10:35'],['4','10:45','11:30'],['5','13:20','14:05'],['6','14:15','15:00'],['7','15:10','15:55'],['8','16:05','16:50'],['9','18:20','19:05'],['10','19:15','20:00'],['11','20:10','20:55']];
+ function toRange(c){const k=c.start+'-'+c.end;const M={'08:00-11:50':[1,4],'13:20-17:10':[5,8],'13:20-15:10':[5,6],'18:20-21:05':[9,11]};
+  if(M[k])return M[k];
+  const toMin=t=>{const[a,b]=t.split(':').map(Number);return a*60+b};const s=toMin(c.start);
+  let a=1;for(let i=0;i<PERIODS.length;i++){if(toMin(PERIODS[i][1])<=s)a=i+1}
+  const e=toMin(c.end);let b=a;for(let i=a-1;i<PERIODS.length;i++){if(toMin(PERIODS[i][2])<=e)b=i+1}
+  return [Math.min(a,11),Math.max(b,a)];
+ }
+ for(let p=0;p<11;p++){g+=`<div class="tt-t"><b style="color:#4aa8e8">${PERIODS[p][0]}</b><br>${PERIODS[p][1]}<br>${PERIODS[p][2]}</div>`}
+ const spanned=new Set();
+ for(let p=0;p<11;p++){
   for(let d0=1;d0<=7;d0++){const idx=d0%7;
-   const cell=active.filter(c=>+c.day===idx&&c.start===s.start&&c.end===s.end);
+   if(spanned.has(p+'-'+idx))continue;
+   const cell=active.filter(c=>+c.day===idx&&(r=>p+1>=r[0]&&p+1<=r[1])(toRange(c)));
    if(!cell.length){g+='<div class="tt-c empty"></div>';continue}
    const c=cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
-   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})" title="点按删除"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
+   const r=toRange(c);const span=r[1]-r[0]+1;
+   for(let q=r[0];q<=r[1];q++)spanned.add((q-1)+'-'+idx);
+   g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-row:${p+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}" onclick="delCourse(${c.i})"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
   }
  }
  cl.innerHTML='<div class="tt-legend"><span>第 '+cw+' 周 · '+SEM_START.slice(5).replace('-','/')+' 开学</span><span><i style="background:#7ec8f2"></i>本周有课</span><span><i style="background:#dceefb"></i>非本周（点击格子可删除）</span></div><div class="timetable-wrap"><div class="timetable">'+g+'</div></div><div class="hint">💡 手机上左右滑动查看周六周日 · 添加课程时填周次（如 9-16）即可自动跨周切换</div>';
