@@ -273,9 +273,11 @@ function renderAll(){
  slots.sort((a,b)=>a.start.localeCompare(b.start));
  let g='<div class="tt-h" style="background:#f2fafe;color:var(--sub)">周次</div>';
  for(let d0=1;d0<=7;d0++){const idx=(d0)%7;g+=`<div class="tt-h${idx===new Date().getDay()?' today':''}">${dn[idx]}<br>${weekDates[idx===0?6:idx-1]||''}</div>`}
+ const SLOT_NAMES={'08:00-11:50':'第1-4节','13:20-15:10':'第5-6节','13:20-17:10':'第5-8节','18:20-21:05':'第9-11节','08:00-09:50':'第1-2节','10:00-11:50':'第3-4节','13:20-15:00':'第5-6节','15:10-17:10':'第7-8节','18:20-20:10':'第9-10节'};
  for(const s of slots){
-  const lab=s.start.startsWith('08')?'上午':s.start.startsWith('13')?'下午':'晚上';
-  g+=`<div class="tt-t">${lab}<br>${s.start}<br>${s.end}</div>`;
+  const key=s.start+'-'+s.end;
+  const lab=SLOT_NAMES[key]||(s.start.startsWith('08')?'上午':s.start.startsWith('13')?'下午':'晚上');
+  g+=`<div class="tt-t"><b style="color:#4aa8e8">${lab}</b><br>${s.start}<br>${s.end}</div>`;
   for(let d0=1;d0<=7;d0++){const idx=d0%7;
    const cell=active.filter(c=>+c.day===idx&&c.start===s.start&&c.end===s.end);
    if(!cell.length){g+='<div class="tt-c empty"></div>';continue}
