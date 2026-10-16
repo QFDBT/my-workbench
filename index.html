@@ -8,7 +8,7 @@
 <title>我的工作台</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-:root{--nav-height:35px;--bg:#e8f4fd;--card:#ffffff;--ink:#3a556e;--sub:#8fb4cc;--red:#f2778d;--yellow:#f5b942;--green:#5fc2a0;--blue:#7ec8f2;--line:#dceefb;--radius:18px}
+:root{--nav-height:20px;--bg:#e8f4fd;--card:#ffffff;--ink:#3a556e;--sub:#8fb4cc;--red:#f2778d;--yellow:#f5b942;--green:#5fc2a0;--blue:#7ec8f2;--line:#dceefb;--radius:18px}
 body{background:url('cinna-bg.jpg') repeat fixed / 260px auto,linear-gradient(180deg,#eaf7ff,#e8f4fd);background-attachment:fixed}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px))}
@@ -28,8 +28,9 @@ header h1{font-size:20px;font-weight:700;text-shadow:0 1px 3px rgba(90,160,210,.
 header .date{opacity:.85;font-size:13px;margin-top:2px}
 header .alerts{margin-top:10px;font-size:13px;background:rgba(255,255,255,.32);border-radius:12px;padding:8px 12px;display:none;backdrop-filter:blur(4px)}
 nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));padding:0 0 env(safe-area-inset-bottom, 0px);box-sizing:border-box;display:flex;align-items:center;background:rgba(255,255,255,.96);border-top:1px solid var(--line);box-shadow:0 -3px 14px rgba(126,200,242,.16);backdrop-filter:blur(8px);z-index:50}
-nav button{flex:1;height:var(--nav-height);padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:none;border:none;color:var(--sub);font-size:9px;line-height:1;cursor:pointer}
+nav button{flex:1;height:var(--nav-height);padding:0;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--sub);font-size:0;cursor:pointer}
 nav button .ic{display:block;font-size:14px;line-height:1}
+nav button .tx{display:none}
 nav button.on{color:#4aa8e8;font-weight:600}
 main{padding:14px;max-width:640px;margin:0 auto}
 .page{display:none}
@@ -175,12 +176,12 @@ body.dark .chk.on{background:var(--green);color:#fff}
   <div class="frow"><button class="act pri" onclick="saveCourse()">保存</button><button class="act" onclick="closeModal()">取消</button></div>
 </div></div>
 <nav>
-  <button class="on" data-p="timeline" onclick="go('timeline')"><span class="ic">📅</span>时间轴</button>
-  <button data-p="todo" onclick="go('todo')"><span class="ic">✅</span>待办</button>
-  <button data-p="inbox" onclick="go('inbox')"><span class="ic">📥</span>收件箱</button>
-  <button data-p="triage" onclick="go('triage')"><span class="ic">🎯</span>事务</button>
-  <button data-p="schedule" onclick="go('schedule')"><span class="ic">📚</span>课表</button>
-  <button data-p="set" onclick="go('set')"><span class="ic">⚙️</span>设置</button>
+  <button class="on" data-p="timeline" onclick="go('timeline')"><span class="ic">📅</span><span class="tx">时间轴</span></button>
+  <button data-p="todo" onclick="go('todo')"><span class="ic">✅</span><span class="tx">待办</span></button>
+  <button data-p="inbox" onclick="go('inbox')"><span class="ic">📥</span><span class="tx">收件箱</span></button>
+  <button data-p="triage" onclick="go('triage')"><span class="ic">🎯</span><span class="tx">事务</span></button>
+  <button data-p="schedule" onclick="go('schedule')"><span class="ic">📚</span><span class="tx">课表</span></button>
+  <button data-p="set" onclick="go('set')"><span class="ic">⚙️</span><span class="tx">设置</span></button>
 </nav>
 <script>
 // ===== 数据层 =====
