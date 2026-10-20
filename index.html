@@ -399,9 +399,10 @@ function toggleCheck(id){const c=checklist.find(x=>x.id===id);c.done=!c.done;sav
 function delCheck(id){checklist=checklist.filter(x=>x.id!==id);save()}
 function delLink(id){links=links.filter(x=>x.id!==id);save()}
 // ===== AI 助手 =====
-function saveGLM(){localStorage.glmKey=document.getElementById('glmKey').value.trim();document.getElementById('glmStatus').textContent=localStorage.glmKey?'✅ 已保存，去收件箱页试试':'未保存'}
+function saveGLM(){localStorage.glmKey=document.getElementById('glmKey').value.trim();document.getElementById('glmStatus').textContent=localStorage.glmKey?'✅ 已保存，去收件箱页试试':'✅ 已使用内置Key，可直接使用（如需换自己的Key可填入）'}
+const GLM_DEFAULT='13e55ede96534586878fdb22f4b50590.bGLe6oDLsMzzIVYo';
 function aiRun(){
- const key=localStorage.glmKey;if(!key)return alert('请先到「设置」页填入智谱 API Key（免费）');
+ const key=localStorage.glmKey||GLM_DEFAULT;if(!key)return alert('请先到「设置」页填入智谱 API Key（免费）');
  const text=document.getElementById('aiText').value.trim();
  const img=window.__aiImg||'';
  if(!text&&!img)return alert('请输入文字或选择图片');
