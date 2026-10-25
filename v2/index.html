@@ -290,7 +290,8 @@ function renderAll(){
   const nAct=items.filter(i=>!i.done&&(i.type==='志愿活动'||i.type==='班级事务')&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=14).length;
   const totalH=ledger.reduce((s,x)=>s+(x.hours||0),0),totalC=ledger.reduce((s,x)=>s+(x.credit||0),0);
   const ckDone=checklist.filter(c=>c.done).length;
-  document.getElementById('weekStats').innerHTML='<h3>📊 本周概览</h3><div style="font-size:13px;line-height:2">📚 本周上课 <b>'+nCourse+'</b> 门　⏰ 7天内截止 <b style="color:var(--red)">'+nDue+'</b> 项　🎯 近两周活动/事务 <b>'+nAct+'</b> 项<br>💰 工时累计 <b>'+totalH+'</b> h · 学分累计 <b>'+totalC+'</b> 分　📋 入党材料 '+ckDone+'/'+checklist.length+' 完成</div>';}
+  const expTxt=expiredCnt?'　⚠️ <span style="color:var(--red)">已过期 '+expiredCnt+' 项（去待办页处理）</span>':'';
+  document.getElementById('weekStats').innerHTML='<h3>📊 本周概览</h3><div style="font-size:13px;line-height:2">📚 本周上课 <b>'+nCourse+'</b> 门　⏰ 7天内截止 <b style="color:var(--red)">'+nDue+'</b> 项　🎯 近两周活动/事务 <b>'+nAct+'</b> 项<br>💰 工时累计 <b>'+totalH+'</b> h · 学分累计 <b>'+totalC+'</b> 分　📋 入党材料 '+ckDone+'/'+checklist.length+' 完成'+expTxt+'</div>';}
  // 周历
  const wg=document.getElementById('weekGrid');const now=new Date();let h='';
  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()+i);
@@ -298,9 +299,11 @@ function renderAll(){
  wg.innerHTML=h;
  // 时间轴（按天合并：课程+待办）
  const body=document.getElementById('timelineBody');const byDay={};
- items.forEach(i=>{if(isDone(i))return;(byDay[i.repeat==='daily'?todayStr():i.date]=byDay[i.repeat==='daily'?todayStr():i.date]||[]).push(i)});
+ const expiredCnt=items.filter(i=>!isDone(i)&&i.repeat!=='daily'&&effDate(i)<todayStr()).length;
+ items.forEach(i=>{if(isDone(i))return;const dd=i.repeat==='daily'?todayStr():i.date;if(i.repeat!=='daily'&&dd<todayStr())return;(byDay[dd]=byDay[dd]||[]).push(i)});
  const dates=Object.keys(byDay).sort();
  if(!dates.length&&!courses.length){body.innerHTML='<div class="empty">暂无安排，点击右下角 ＋ 添加</div>'}
+ else if(!dates.length){body.innerHTML='<div class="empty">今日无安排 🎉</div>'}
  else{let hh='';
   dates.slice(0,14).forEach(d=>{const n=daysLeft(d);
    const lab=n===0?'今天':n===1?'明天':new Date(d+'T12:00').toLocaleDateString('zh-CN',{month:'numeric',day:'numeric',weekday:'short'});
@@ -311,7 +314,9 @@ function renderAll(){
   });
   body.innerHTML=hh;}
  // 待办列表
- const tl=document.getElementById('todoList');const sorted=[...items].sort((a,b)=>(isDone(a)?9:0)-(isDone(b)?9:0)||effDate(a).localeCompare(effDate(b)));
+ const tl=document.getElementById('todoList');const tg=todayStr();
+ const ord=i=>isDone(i)?2:(i.repeat!=='daily'&&effDate(i)<tg?1:0);
+ const sorted=[...items].sort((a,b)=>ord(a)-ord(b)||effDate(a).localeCompare(effDate(b)));
  tl.innerHTML=sorted.length?sorted.map(todoHTML).join(''):'<div class="empty">还没有待办</div>';
  // 收件箱
  const il=document.getElementById('inboxList');
