@@ -456,6 +456,7 @@ function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove(
 // 跨设备云同步轮询（每60秒拉一次）
 setInterval(()=>{if(cloudReady)pullCloud()},60000);
 if(localStorage.sbUrl)document.getElementById('sbUrl').value=localStorage.sbUrl;if(localStorage.sbKey)document.getElementById('sbKey').value=localStorage.sbKey;
+if(location.hash.startsWith('#aik=')){const k=decodeURIComponent(location.hash.slice(5));if(k.startsWith('sk-')){localStorage.aiKey=k;history.replaceState(null,'',location.pathname+location.search);setTimeout(()=>alert('✅ AI Key 已自动配置完成，去收件箱页试吧！'),300)}}
 applyTheme();
 renderAll();
 </script>
