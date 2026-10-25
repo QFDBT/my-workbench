@@ -293,7 +293,8 @@ function renderAll(){
   const nAct=items.filter(i=>!i.done&&(i.type==='志愿活动'||i.type==='班级事务')&&daysLeft(i.date,i.time)>=0&&daysLeft(i.date,i.time)<=14).length;
   const totalH=ledger.reduce((s,x)=>s+(x.hours||0),0),totalC=ledger.reduce((s,x)=>s+(x.credit||0),0);
   const ckDone=checklist.filter(c=>c.done).length;
-  const expTxt=expiredCnt?'　⚠️ <span style="color:var(--red)">已过期 '+expiredCnt+' 项（去待办页处理）</span>':'';
+  const expiredNow=items.filter(i=>!isDone(i)&&i.repeat!=='daily'&&effDate(i)<todayStr()).length;
+  const expTxt=expiredNow?'　⚠️ <span style="color:var(--red)">已过期 '+expiredNow+' 项（去待办页处理）</span>':'';
   document.getElementById('weekStats').innerHTML='<h3>📊 本周概览</h3><div style="font-size:13px;line-height:2">📚 本周上课 <b>'+nCourse+'</b> 门　⏰ 7天内截止 <b style="color:var(--red)">'+nDue+'</b> 项　🎯 近两周活动/事务 <b>'+nAct+'</b> 项<br>💰 工时累计 <b>'+totalH+'</b> h · 学分累计 <b>'+totalC+'</b> 分　📋 入党材料 '+ckDone+'/'+checklist.length+' 完成'+expTxt+'</div>';}
  // 周历
  const wg=document.getElementById('weekGrid');const now=new Date();let h='';
