@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>我的工作台</title>
+<title>强风大背头的工作台</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{--nav-height:20px;--bg:#e8f4fd;--card:#ffffff;--ink:#3a556e;--sub:#8fb4cc;--red:#f2778d;--yellow:#f5b942;--green:#5fc2a0;--blue:#7ec8f2;--line:#dceefb;--radius:18px}
-body{background:url('cinna-bg.jpg') repeat fixed / 260px auto,linear-gradient(180deg,#eaf7ff,#e8f4fd);background-attachment:fixed}
+body{background:url('bg-sky.jpg') center/cover no-repeat fixed,linear-gradient(180deg,#eaf7ff,#e8f4fd)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px))}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom, 0px))}
 body.dark{--bg:#16202b;--card:#1f2c3a;--ink:#dce9f5;--sub:#7f95a8;--line:#2c3d4f}
-body.dark{background:url('cinna-bg.jpg') repeat fixed / 260px auto,#16202b;background-blend-mode:soft-light;background-attachment:fixed}
+body.dark{background:url('bg-sky.jpg') center/cover no-repeat fixed,#16202b;background-blend-mode:soft-light}
+@media (orientation:landscape){body{background:url('bg-note.jpg') center/cover no-repeat fixed,linear-gradient(180deg,#eaf7ff,#e8f4fd)}body.dark{background:url('bg-note.jpg') center/cover no-repeat fixed,#16202b;background-blend-mode:soft-light}}
 body.dark header{background:linear-gradient(135deg,#2b4a63,#1f3a50)}
 body.dark .card{background:rgba(31,44,58,.88);border-color:#2c3d4f;box-shadow:0 3px 14px rgba(0,0,0,.3)}
 body.dark nav{background:rgba(22,32,43,.96)}
@@ -92,7 +93,7 @@ body.dark .chk.on{background:var(--green);color:#fff}
 </head>
 <body>
 <header>
-  <h1>玉桂狗工作台 🎓🩵</h1>
+  <h1>强风大背头的工作台</h1>
   <div class="date" id="todayStr"></div>
   <div class="alerts" id="alertBar"></div>
 </header>
