@@ -237,7 +237,7 @@ function parseText(text){
  let m=text.match(/(\d{1,2})月(\d{1,2})[日号]/);if(m){r.date=`${now.getFullYear()}-${pad(m[1])}-${pad(m[2])}`}
  if(!r.date){m=text.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);if(m)r.date=`${m[1]}-${pad(m[2])}-${pad(m[3])}`}
  if(!r.date){const wk={'周一':1,'周二':2,'周三':3,'周四':4,'周五':5,'周六':6,'周日':0,'星期一':1,'星期二':2,'星期三':3,'星期四':4,'星期五':5,'星期六':6,'星期日':0};
-  for(const k in wk){if(text.includes(k)){const d=new Date(now);const diff=(wk[k]-d.getDay()+7)%7||7;d.setDate(d.getDate()+diff);r.date=d.toISOString().slice(0,10);break}}}
+  for(const k in wk){if(text.includes(k)){const d=new Date(now);const diff=(wk[k]-d.getDay()+7)%7||7;d.setDate(d.getDate()+diff);r.date=localDateStr(d);break}}}
  m=text.match(/(\d{1,2})[点:：时](\d{1,2})?分?/);if(m)r.time=`${pad(m[1])}:${pad(m[2]||'00')}`;
  if(/志愿|工时/.test(text))r.type='志愿活动';
  else if(/学分|综测|团支书|班委|班会|入党|团员/.test(text))r.type='班级事务';
@@ -267,7 +267,8 @@ function confirmParse(rJson,tJson){const r=JSON.parse(rJson);
  document.getElementById('pasteBox').value='';document.getElementById('parseResult').innerHTML='';save();}
 
 // ===== 渲染 =====
-const todayStr=()=>new Date().toISOString().slice(0,10);
+const localDateStr=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayStr=()=>localDateStr();
 function daysLeft(d,t){if(d==='daily')return 0;const dt=new Date(d+'T'+(t||'23:59'));return Math.ceil((dt-new Date())/864e5)}
 function effDate(i){return i.repeat==='daily'?todayStr():i.date}
 function isDone(i){return i.repeat==='daily'?(i.doneOn===todayStr()):!!i.done}
@@ -277,7 +278,7 @@ function esc(s){return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;
 const typeTag=t=>`<span class="tag">${t}</span>`;
 
 const SEM_START='2026-09-14';// 第1周周一，如学期更捎改这里
-function curWeek(){const d=Math.floor((new Date(new Date().toISOString().slice(0,10))-new Date(SEM_START))/864e5);return Math.floor(d/7)+1}
+function curWeek(){const d=Math.floor((new Date(todayStr())-new Date(SEM_START))/864e5);return Math.floor(d/7)+1}
 function weekOn(cw,w){if(!w)return true;const m=String(w).match(/^(\d+)-(\d+)$/);if(m)return cw>=+m[1]&&cw<=+m[2];if(/^\d+$/.test(String(w)))return cw==+w;return true}
 function renderAll(){
  document.getElementById('todayStr').textContent=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'})+' · 第'+curWeek()+'周';
@@ -386,11 +387,11 @@ function todoHTML(i){const dn=isDone(i);const dd=i.repeat==='daily'?'每日 🔄
  return `<div class="item ${dn?'done':''}"><div class="dot ${prio(i)}"></div><div class="t"><div class="title" onclick="toggleDone(${i.id})" style="cursor:pointer">${esc(i.title)}</div><div class="meta">${typeTag(i.type)}${dd} · ${dlText(i)}</div></div><button class="chk ${dn?'on':''}" onclick="toggleDone(${i.id})" title="标为完成">✔</button><button class="act" onclick="delItem(${i.id})">✕</button></div>`}
 function itemHTML(o){return `<div class="item"><div class="dot ${o.cls}"></div><div class="t"><div class="title">${esc(o.title)}</div><div class="meta">${o.tags.map(typeTag).join('')}${esc(o.meta)}</div></div></div>`}
 function toggleRaw(id){document.getElementById('raw'+id).classList.toggle('open')}
-function decide(id,join){const i=inbox.find(x=>x.id===id);if(join){items.push({id:Date.now(),title:i.title,date:i.date||new Date().toISOString().slice(0,10),time:'23:59',type:i.type,done:false});i.status='已参加'}else i.status='不参加';save()}
+function decide(id,join){const i=inbox.find(x=>x.id===id);if(join){items.push({id:Date.now(),title:i.title,date:i.date||localDateStr(),time:'23:59',type:i.type,done:false});i.status='已参加'}else i.status='不参加';save()}
 function toggleDone(id){const i=items.find(x=>x.id===id);if(i.repeat==='daily'){i.doneOn=i.doneOn===todayStr()?'':todayStr();if(i.doneOn)i.doneCount=(i.doneCount||0)+1}else i.done=!i.done;save()}
 function delItem(id){items=items.filter(x=>x.id!==id);save()}
 function delCourse(i){courses.splice(i,1);save()}
-function openAdd(){document.getElementById('modal').classList.add('on');document.getElementById('fDate').value=new Date().toISOString().slice(0,10)}
+function openAdd(){document.getElementById('modal').classList.add('on');document.getElementById('fDate').value=localDateStr()}
 function openCourseAdd(){document.getElementById('modalC').classList.add('on')}
 function closeModal(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('on'))}
 function saveItem(){const t=document.getElementById('fTitle').value.trim();if(!t)return alert('请填写名称');
@@ -401,7 +402,7 @@ function saveCourse(){const n=document.getElementById('cName').value.trim();if(!
  courses.push({name:n,day:+document.getElementById('cDay').value,start:document.getElementById('cStart').value,end:document.getElementById('cEnd').value,room:document.getElementById('cRoom').value.trim(),weeks:document.getElementById('cWeeks').value.trim()});
  document.getElementById('cName').value='';closeModal();save()}
 function addLedger(){const n=prompt('事项名称（如：图书馆志愿）');if(!n)return;const h=parseFloat(prompt('工时数（无则填0）')||0);const cr=parseFloat(prompt('学分数（无则填0）')||0);
- ledger.push({id:Date.now(),name:n,hours:h,credit:cr,date:new Date().toISOString().slice(0,10)});save()}
+ ledger.push({id:Date.now(),name:n,hours:h,credit:cr,date:localDateStr()});save()}
 function delLedger(id){ledger=ledger.filter(x=>x.id!==id);save()}
 function addCheck(){const t=prompt('材料名称（如：思想汇报第3篇）');if(!t)return;checklist.push({id:Date.now(),text:t,done:false});save()}
 function toggleCheck(id){const c=checklist.find(x=>x.id===id);c.done=!c.done;save()}
