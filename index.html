@@ -218,13 +218,16 @@ function initSB(){const url=localStorage.sbUrl||SB_DEFAULT.url,key=localStorage.
  try{sb=supabase.createClient(url,key);cloudReady=true;return true}catch(e){return false}}
 function saveLC(){localStorage.sbUrl=document.getElementById('sbUrl').value.trim().replace(/\/+$/,'');localStorage.sbKey=document.getElementById('sbKey').value.trim();
  if(initSB()){document.getElementById('lcStatus').textContent='✅ 已连接，正在同步…';pullCloud()}else{document.getElementById('lcStatus').textContent='❌ 连接失败，请检查 URL 和 key'}}
+let syncedOnce=false;
 async function pushCloud(){if(!cloudReady)return;
+ // 保险：本地为空且从未从云端拉取过时，绝不上传（防止空数据覆盖云端）
+ if(!syncedOnce&&items.length===0&&courses.length===0&&inbox.length===0&&links.length===0&&ledger.length===0&&checklist.length===0)return;
  try{await sb.from('workbench').upsert({id:1,data:{items,courses,inbox,links,ledger,checklist},updated_at:new Date().toISOString()});}catch(e){}}
 async function pullCloud(){if(!cloudReady){document.getElementById('lcStatus').textContent='未配置云同步';return}
  try{const res=await sb.from('workbench').select('data').eq('id',1).maybeSingle();
  if(res.error)throw res.error;
  if(res.data&&res.data.data){const d=res.data.data;items=d.items||[];courses=d.courses||[];inbox=d.inbox||[];links=d.links||[];ledger=d.ledger||[];checklist=d.checklist||[];localStorage.items=JSON.stringify(items);localStorage.courses=JSON.stringify(courses);localStorage.inbox=JSON.stringify(inbox);localStorage.links=JSON.stringify(links);localStorage.ledger=JSON.stringify(ledger);localStorage.checklist=JSON.stringify(checklist);renderAll();}
- document.getElementById('lcStatus').textContent=res.data?'✅ 同步完成 '+new Date().toLocaleTimeString():'✅ 已连接（云端暂无数据，本机数据将自动上传）';}catch(e){document.getElementById('lcStatus').textContent='⚠️ 同步失败：'+(e.message||e)+'（若提示表不存在，请先在 Supabase SQL Editor 执行建表语句）'}}
+ syncedOnce=true;document.getElementById('lcStatus').textContent=res.data?'✅ 同步完成 '+new Date().toLocaleTimeString():'✅ 已连接（云端暂无数据，本机数据将自动上传）';}catch(e){document.getElementById('lcStatus').textContent='⚠️ 同步失败：'+(e.message||e)+'（若提示表不存在，请先在 Supabase SQL Editor 执行建表语句）'}}
 if(initSB())setTimeout(pullCloud,500);
 
 // ===== 智能解析 =====
