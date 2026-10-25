@@ -125,8 +125,8 @@ body.dark .chk.on{background:var(--green);color:#fff}
     </div>
     <div class="card">
       <h3>📡 学习通任务抓取</h3>
-      <div class="frow"><a class="act pri" id="cxBookmark" href="#" onclick="return false" style="text-decoration:none;display:inline-block">📥 抓作业到工作台</a><button class="act" onclick="copyCxCode()">复制抓取代码</button></div>
-      <div class="hint">用法（电脑浏览器，3 步，首次后一劳永逸）：<br>① 把上面蓝色按钮<b>拖到浏览器书签栏</b>；② 在电脑浏览器打开并登录学习通收件箱（notice.chaoxing.com）；③ 点书签栏的「抓作业到工作台」，抓完自动跳回本页弹出导入预览</div>
+      <div class="frow"><a class="act pri" id="cxBookmark" href="#" onclick="return cxHint()" style="text-decoration:none;display:inline-block">📥 抓作业到工作台（按住拖到书签栏）</a><button class="act" onclick="copyCxCode()">复制抓取代码</button></div>
+      <div class="hint">用法（<b>只能电脑</b>，3 步，首次后一劳永逸）：<br>① 在电脑上<b>按住</b>蓝色按钮拖到书签栏（看不到书签栏先按 <b>Ctrl+Shift+B</b> 显示）；② 电脑浏览器打开并登录学习通收件箱（notice.chaoxing.com）；③ <b>在学习通页面</b>点书签栏里的「抓作业到工作台」→ 自动跳回本页弹出导入预览</div>
       <div class="hint" id="cxStatus">🔒 抓取只读取你已登录的通知列表和作业截止时间，全部在本机完成，不经过任何第三方</div>
     </div>
     <div class="card">
@@ -472,6 +472,7 @@ if(location.hash.startsWith('#aik=')){const k=decodeURIComponent(location.hash.s
 // ===== 学习通任务抓取（书签+导入） =====
 const CX_CODE=String.raw`(async()=>{try{const tip=m=>{let d=document.getElementById('__cxtip');if(!d){d=document.createElement('div');d.id='__cxtip';d.style.cssText='position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#2b8fd8;color:#fff;padding:10px 18px;border-radius:22px;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.3)';document.body.appendChild(d)}d.textContent=m};const lis=[...document.querySelectorAll('li')].map(li=>({t:(li.innerText||'').replace(/\s+/g,' ').trim(),el:li.querySelector('a'),h:(li.innerHTML.match(/\$CACG\$[0-9a-f-]{36}/)||[])[0]})).filter(x=>x.h&&x.el&&/\d{2}-\d{2}/.test(x.t));if(!lis.length){alert('没找到通知列表，请在学习通电脑版收件箱页面使用');return}for(let i=0;i<lis.length;i++){tip('📡 正在抓取 '+(i+1)+'/'+lis.length+'，请勿关闭页面');lis[i].el.click();await new Promise(r=>setTimeout(r,750))}await new Promise(r=>setTimeout(r,2000));const out=lis.map(it=>{const f=[...document.querySelectorAll('.iframeModeIframe')].find(g=>(g.src||'').indexOf(it.h)>=0);let tx='';if(f){try{tx=(f.contentDocument&&f.contentDocument.body)?f.contentDocument.body.innerText:''}catch(e){}}const c=((tx.match(/课程名称[：:]([^作]{2,30}?)作业名称/)||[])[1]||'').trim();const n=((tx.match(/作业名称[：:]([^开]{2,60}?)开始时间/)||[])[1]||'').trim();const en=tx.match(/结束时间[：:]\s*(\d{4}-\d{2}-\d{2})[\s ]*(\d{2}:\d{2})?/)||[];return {c:c,n:n,e:en[1]||'',et:en[2]||'',k:/结束提醒|督促|打回/.test(it.t)?'r':(/作业[:：]/.test(it.t)?'h':'o'),raw:it.t.slice(0,40)}});tip('✅ 抓取完成，正在跳回工作台…');setTimeout(()=>{location.href='https://qfdbt.github.io/my-workbench/v2/#cx='+btoa(unescape(encodeURIComponent(JSON.stringify(out))))},600)}catch(e){alert('抓取出错：'+e.message)}})()`;
 (function(){const a=document.getElementById('cxBookmark');if(a)a.href='javascript:'+encodeURIComponent(CX_CODE)})();
+function cxHint(){alert('这个按钮不是在这里点的哦 😄\n\n正确用法（电脑上 1 分钟设置，永久能用）：\n① 用鼠标【按住】这个蓝色按钮，拖到浏览器顶部的书签栏里松手（看不到书签栏先按 Ctrl+Shift+B）\n② 在电脑浏览器打开并登录学习通收件箱 notice.chaoxing.com\n③ 在学习通页面点书签栏里的「抓作业到工作台」，抓完自动跳回工作台导入');return false}
 function copyCxCode(){const t='javascript:'+encodeURIComponent(CX_CODE);(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{const s=document.getElementById('cxStatus');if(s)s.textContent='✅ 已复制（电脑备用：新建书签，网址栏粘贴此代码）'},()=>{prompt('复制下面的抓取代码，新建书签粘贴到网址：',t)})}
 if(location.hash.startsWith('#cx=')){try{
  const cxData=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(4)))));
