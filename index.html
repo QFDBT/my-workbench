@@ -452,7 +452,7 @@ function applyAI(){
  window.__aiActs=null;document.getElementById('aiResult').innerHTML='';document.getElementById('aiStatus').textContent='✅ 已执行';document.getElementById('aiText').value='';
  save();
 }
-document.addEventListener('change',e=>{if(e.target.id==='aiImg'&&e.target.files[0]){const rd=new FileReader();rd.onload=()=>{window.__aiImg=rd.result;document.getElementById('aiStatus').textContent='📷 图片已就绪，点 AI 解析'};rd.readAsDataURL(e.target.files[0]);}});
+document.addEventListener('change',e=>{if(e.target.id==='aiImg'&&e.target.files[0]){const f=e.target.files[0];const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const M=1280;let w=im.width,h=im.height;if(w>M||h>M){const k=M/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k)}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(im,0,0,w,h);window.__aiImg=cv.toDataURL('image/jpeg',0.85);document.getElementById('aiStatus').textContent='📷 图片已就绪（'+Math.round(f.size/1024)+'KB → 压缩至约'+Math.round((window.__aiImg.length-22)*3/4/1024)+'KB），点 AI 解析'};im.onerror=()=>{window.__aiImg=rd.result;document.getElementById('aiStatus').textContent='📷 图片已就绪，点 AI 解析'};im.src=rd.result};rd.readAsDataURL(f);}});
 function applyTheme(){const m=localStorage.darkMode||'auto';const h=new Date().getHours();
  const dark=m==='on'||(m==='auto'&&(h>=19||h<7));document.body.classList.toggle('dark',dark);
  const st=document.getElementById('dkStatus');if(st)st.textContent='当前模式：'+(m==='auto'?'自动（现在是'+(dark?'深色':'浅色')+'）':m==='on'?'常开深色':'常关浅色');}
