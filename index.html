@@ -427,10 +427,10 @@ function aiRun(){
  const today=todayStr();
  const sys='你是大学生个人工作台的待办助手。今天是'+today+'。根据用户的文字或图片提取/更新待办任务，只输出一个JSON数组，不要任何其他文字或markdown。每个元素格式：\n{action:add,title:任务名,date:YYYY-MM-DD,time:HH:MM,type:类型,daily:false}（type只能取：作业/课程/志愿活动/班级事务/文件提交/其他；daily:true表示每日重复，此时date填daily）\n{action:delete,match:标题关键词}\n{action:replace,match:旧任务关键词,title:新名,date,time,type}\n如果用户只是闲聊无任务，输出[]';
  const msg={role:'user',content:img?[{type:'text',text:sys+'\n用户输入：'+(text||'（见图）')},{type:'image_url',image_url:{url:img}}]:sys+'\n用户输入：'+text};
- const models=img?['Qwen/Qwen2.5-VL-7B-Instruct','Qwen/Qwen2-VL-7B-Instruct','Qwen/Qwen2.5-VL-7B-Instruct']:['Qwen/Qwen2.5-7B-Instruct','THUDM/glm-4-9b-chat','Qwen/Qwen2.5-7B-Instruct'];
+ const models=img?['Qwen/Qwen3-VL-30B-A3B-Instruct','Qwen/Qwen3-VL-8B-Instruct','Qwen/Qwen3-VL-30B-A3B-Instruct']:['Qwen/Qwen2.5-7B-Instruct','THUDM/glm-4-9b-chat','Qwen/Qwen2.5-7B-Instruct'];
  const sfKey=localStorage.aiKey||localStorage.glmKey||key;
  const callAI=mi=>fetch('https://api.siliconflow.cn/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+sfKey},
-  body:JSON.stringify({model:models[mi],messages:[msg],temperature:0.1,max_tokens:1024})}).then(r=>r.json());
+  body:JSON.stringify({model:models[mi],messages:[msg],temperature:0.1,max_tokens:1024})}).then(r=>r.json()).then(j=>{if(!j.choices)throw new Error(j.message||'接口异常');return j});
  callAI(0).catch(()=>callAI(1)).catch(()=>callAI(2)).then(j=>{
   const c=j.choices&&j.choices[0]&&j.choices[0].message.content||'';
   const m=c.match(/\[[\s\S]*\]/);if(!m)throw new Error(c.slice(0,80)||'无内容');
