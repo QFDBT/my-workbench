@@ -258,6 +258,7 @@ function parseText(text){
  return r;
 }
 const pad=n=>String(n).padStart(2,'0');
+function applyAIFallback(){const r=window.__aiFB;if(!r)return;let d=r.date;if(!d){d=prompt('未识别到截止日期，请输入（格式 2026-10-20）：');if(!d)return}items.push({id:Date.now(),title:r.title,date:d,time:r.time||'23:59',type:r.type||'其他',done:false});window.__aiFB=null;document.getElementById('aiResult').innerHTML='';document.getElementById('aiText').value='';document.getElementById('aiStatus').textContent='✅ 已保存';save();renderAll()}
 function parsePaste(){
  const t=document.getElementById('pasteBox').value.trim();if(!t)return;
  const r=parseText(t);
@@ -443,8 +444,7 @@ function aiRun(){
   document.getElementById('aiResult').innerHTML='<div class="parsed">'+acts.map((a,i)=>
    '<div>▪ ['+({add:'➕新增',delete:'🗑️删除',replace:'🔄替换'}[a.action]||a.action)+'] '+esc(a.title||a.match)+(a.date?'<br>　⏰ '+a.date+' '+(a.time||'')+(a.daily?'（每日）':''):'')+'</div>'
   ).join('')+'<div class="frow"><button class="act pri" onclick=\'applyAI()\'>✅ 确认执行</button><button class="act" onclick=\'window.__aiActs=null;document.getElementById("aiResult").innerHTML=""\'>✖ 取消</button></div></div>';
- }).catch(e=>{st.textContent='⚠️ AI 调用失败：'+e.message+'（检查Key/网络；若始终失败可继续用下方收件箱规则解析）'});
-}
+ }).catch(e=>{const t=document.getElementById('aiText').value.trim();if(t){try{const r=parseText(t);if(r&&r.title){window.__aiFB=r;document.getElementById('aiResult').innerHTML='<div class="parsed"><b>⚠️ AI 未可用（'+esc(e.message.slice(0,50))+'），已改用本地规则解析：</b><br>📌 '+esc(r.title)+'<br>⏰ '+(r.date||'未识别日期')+' '+(r.time||'23:59')+'<br>🏷️ '+(r.type||'其他')+'<div class="frow"><button class="act pri" onclick=\'applyAIFallback()\'>✅ 确认保存</button><button class="act" onclick=\'window.__aiFB=null;document.getElementById("aiResult").innerHTML=""\'>✖ 取消</button></div></div>';st.textContent='🤖 已改用本地规则解析（免费），请确认';return}}catch(e2){}}st.textContent='⚠️ AI 调用失败：'+e.message+'（检查Key/网络；也可用下方收件箱粘贴文字）'})}
 function applyAI(){
  const acts=window.__aiActs||[];let n=0;
  acts.forEach(a=>{
