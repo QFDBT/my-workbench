@@ -118,7 +118,7 @@ body.dark .chk.on{background:var(--green);color:#fff}
 ③ 图片里的作业也帮我加进去"></textarea>
       <div class="frow">
         <input type="file" id="aiImg" accept="image/*" style="padding:6px;font-size:12px">
-        <button class="act pri" onclick="aiRun()" style="white-space:nowrap">🤖 AI 解析</button>
+        <button class="act pri" onclick="aiGo()" style="white-space:nowrap">🤖 AI 解析</button>
       </div>
       <div class="hint" id="aiStatus">支持：增任务 / 删任务（说关键词）/ 改任务 / 识图提取作业。AI 结果会先预览，你确认后才写入</div>
       <div id="aiResult"></div>
@@ -418,6 +418,9 @@ function delLink(id){links=links.filter(x=>x.id!==id);save()}
 // ===== AI 助手 =====
 function saveGLM(){localStorage.glmKey=document.getElementById('glmKey').value.trim();document.getElementById('glmStatus').textContent=localStorage.glmKey?'✅ 已保存，去收件箱页试试':'✅ 已使用内置Key，可直接使用（如需换自己的Key可填入）'}
 const GLM_DEFAULT='13e55ede96534586878fdb22f4b50590.bGLe6oDLsMzzIVYo';
+function loadTess(){return new Promise((res,rej)=>{if(window.Tesseract)return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=()=>res();s.onerror=()=>rej(new Error('识别引擎加载失败，检查网络后重试'));document.head.appendChild(s)})}
+async function ocrImg(dataUrl,st){await loadTess();const w=await Tesseract.createWorker('chi_sim+eng',1,{logger:m=>{if(m.status==='recognizing text')st.textContent='🔍 正在识别图中文字 '+Math.round(m.progress*100)+'%'}});const d=await w.recognize(dataUrl);await w.terminate();return (d.data&&d.data.text||'').replace(/[ \t]+/g,' ').trim()}
+async function aiGo(){const st=document.getElementById('aiStatus');if(window.__aiImg){try{st.textContent='🔍 正在加载本地识别引擎（首次约几 MB，之后秒开）…';const t=await ocrImg(window.__aiImg,st);if(!t){st.textContent='⚠️ 没认出图中文字，试试更清晰的截图，或用下方收件箱粘贴文字';return}const el=document.getElementById('aiText');el.value=(el.value?el.value+'\n':'')+'图片文字内容：'+t;st.textContent='🔍 已识出图中文字，AI 整理中…';window.__aiImg=''}catch(e){st.textContent='⚠️ '+e.message+'（可改用下方收件箱粘贴文字）';return}}aiRun()}
 function aiRun(){
  const key=localStorage.glmKey||GLM_DEFAULT;if(!key)return alert('请先到「设置」页填入智谱 API Key（免费）');
  const text=document.getElementById('aiText').value.trim();
