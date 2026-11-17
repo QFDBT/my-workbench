@@ -162,6 +162,11 @@ body.dark .chk.on{background:var(--green);color:#fff}
       <div class="frow"><button class="act pri" onclick="saveLC()">保存并连接</button><button class="act" onclick="pullCloud()">立即同步</button></div>
       <div class="hint" id="lcStatus"></div>
     </div>
+    <div class="card"><h3>🔄 数据同步码（不依赖云端，永不失联）</h3>
+      <div class="frow"><button class="act pri" onclick="exportData()">📤 导出数据码</button><button class="act" onclick="document.getElementById('impBox').style.display='block'">📥 导入数据码</button></div>
+      <div id="impBox" style="display:none"><textarea id="impText" style="width:100%;height:64px;background:#fff;border:1px solid #bde3f7;border-radius:8px;padding:6px;font-size:12px" placeholder="粘贴另一台设备导出的数据码或链接"></textarea><div class="frow"><button class="act pri" onclick="importData()">确认导入（覆盖本机）</button></div></div>
+      <div class="hint">用法：设备A导出 → 微信发给设备B → B导入。云端恢复后自动同步照旧，此功能作为永不宕机的备用通道</div>
+    </div>
     <div class="card"><h3>🔔 iPhone 推送提醒</h3>
       <div class="hint">点下方按钮会把"3天内截止的待办"复制成清单，粘贴进 iPhone 自带"提醒事项"App，即可获得真机闹钟式提醒（详细自动化设置见使用说明）</div>
       <div class="frow"><button class="act pri" onclick="exportReminders()">复制临近截止清单</button></div>
@@ -490,6 +495,17 @@ if(location.hash.startsWith('#cx=')){try{
 }catch(e){alert('学习通数据解析失败：'+e.message)}}
 applyTheme();
 renderAll();
+// ===== 数据同步码（导出/导入/hash一键导入） =====
+function exportData(){const code=btoa(unescape(encodeURIComponent(JSON.stringify({items,courses,inbox,links,ledger,checklist}))));const link='https://qfdbt.github.io/my-workbench/v2/#data='+code;(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(link):Promise.reject()).then(()=>alert('✅ 数据码已复制！\n\n把它通过微信发给另一台设备，对方点开链接点「确认导入」即可同步'),()=>prompt('复制下面的数据同步链接发给另一台设备：',link))}
+function importData(){const t=document.getElementById('impText').value.trim();if(!t)return alert('先粘贴数据码');try{let dj;if(t.indexOf('#data=')>=0){dj=JSON.parse(decodeURIComponent(escape(atob(t.split('#data=')[1]))))}else{dj=JSON.parse(decodeURIComponent(escape(atob(t))))}if(!confirm('导入将覆盖本机全部数据（待办'+(dj.items||[]).length+'条/课程'+(dj.courses||[]).length+'条），继续？'))return;['items','courses','inbox','links','ledger','checklist'].forEach(k=>{if(dj[k])window[k]=dj[k]});save();renderAll();document.getElementById('impBox').style.display='none';alert('✅ 数据已导入本机')}catch(e){alert('数据码无效：'+e.message)}}
+if(location.hash.startsWith('#data=')){try{
+ const dj=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(6)))));
+ const ov=document.createElement('div');ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(10,22,34,.72);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px';
+ ov.innerHTML='<div style="background:#fff;color:#123;border-radius:16px;max-width:480px;width:100%;padding:18px;font-size:14px;line-height:1.8"><h3 style="margin:0 0 8px">📥 收到同步数据</h3>待办 <b>'+(dj.items||[]).length+'</b> 条 · 课程 <b>'+(dj.courses||[]).length+'</b> 门 · 收件箱 '+(dj.inbox||[]).length+' 条<br><span style="color:#c60">确认后覆盖本机全部数据</span><div style="margin-top:12px;display:flex;gap:8px"><button class="act pri" id="dimpGo">确认导入</button><button class="act" id="dimpNo">取消</button></div></div>';
+ document.body.appendChild(ov);
+ document.getElementById('dimpGo').onclick=()=>{['items','courses','inbox','links','ledger','checklist'].forEach(k=>{if(dj[k])window[k]=dj[k]});save();renderAll();history.replaceState(null,'',location.pathname+location.search);ov.remove();alert('✅ 数据已导入本机')};
+ document.getElementById('dimpNo').onclick=()=>{history.replaceState(null,'',location.pathname+location.search);ov.remove()};
+}catch(e){alert('数据码解析失败：'+e.message)}}
 // ===== 新版本自动检测（根治缓存旧版问题） =====
 const APP_VER='v20261117';
 setTimeout(()=>{fetch('version.json?_='+Date.now()).then(r=>r.json()).then(j=>{if(j.v&&j.v!==APP_VER){const b=document.createElement('div');b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#2b8fd8;color:#fff;padding:10px 16px;border-radius:20px;z-index:999;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer';b.textContent='🔄 有新版本，点这里更新';b.onclick=()=>location.reload(true);document.body.appendChild(b)}}).catch(()=>{})},4000);
