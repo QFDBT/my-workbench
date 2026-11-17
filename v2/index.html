@@ -490,6 +490,9 @@ if(location.hash.startsWith('#cx=')){try{
 }catch(e){alert('学习通数据解析失败：'+e.message)}}
 applyTheme();
 renderAll();
+// ===== 新版本自动检测（根治缓存旧版问题） =====
+const APP_VER='v20261117';
+setTimeout(()=>{fetch('version.json?_='+Date.now()).then(r=>r.json()).then(j=>{if(j.v&&j.v!==APP_VER){const b=document.createElement('div');b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);background:#2b8fd8;color:#fff;padding:10px 16px;border-radius:20px;z-index:999;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer';b.textContent='🔄 有新版本，点这里更新';b.onclick=()=>location.reload(true);document.body.appendChild(b)}}).catch(()=>{})},4000);
 </script>
 </body>
 </html>
