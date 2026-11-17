@@ -381,7 +381,7 @@ function renderAll(){
    if(spanned.has(p+'-'+idx))continue;
    const cell=active.filter(c=>+c.day===idx&&(r=>p+1>=r[0]&&p+1<=r[1])(toRange(c)));
    if(!cell.length){g+=`<div class="tt-c empty" style="grid-column:${d0+1};grid-row:${p+2}"></div>`;continue}
-   const c=cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
+   const c=cell.find(x=>weekOn(curWeek(),x.weeks))||cell[0];if(!cn[c.name])cn[c.name]=colors[(ci++)%colors.length];
    const r=toRange(c);const span=r[1]-r[0]+1;
    for(let q=r[0];q<=r[1];q++)spanned.add((q-1)+'-'+idx);
    g+=`<div class="tt-c ${c.on?'':'tt-past'}" style="grid-column:${d0+1};grid-row:${r[0]+1}/span ${span};background:${c.on?cn[c.name]:'#dceefb'}"><b>${esc(c.name)}</b><span>${esc(c.room||'')}${c.on?'':'（非本周）'}</span></div>`;
